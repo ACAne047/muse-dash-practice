@@ -20,7 +20,7 @@ internal sealed class NoteResetSnapshot
     private readonly List<AnimatorState> _animators = new();
     private readonly List<SkeletonAnimation> _skeletons = new();
     private readonly List<RendererState> _renderers = new();
-    private readonly List<MaterialState> _materials = new();
+    private readonly List<HoldMaterialState> _materials = new();
     private readonly List<ParticleSystem> _particles = new();
     private readonly List<MonoBehaviour> _scripts = new();
     private readonly List<Animation> _legacyAnimations = new();
@@ -33,6 +33,7 @@ internal sealed class NoteResetSnapshot
     private readonly List<Il2CppAssets.Scripts.GameCore.Interface.IUpdate> _initialUpdates = new();
     private readonly List<Il2CppAssets.Scripts.GameCore.Interface.IUpdate> _initialFixedUpdates = new();
     private int _holds;
+    private int _cancelledHoldFades;
 
     public int RootCount => _roots.Count;
 
@@ -81,7 +82,8 @@ internal sealed class NoteResetSnapshot
     {
         roots = RootCount, transforms = _transforms.Count, animators = _animators.Count,
         skeletons = _skeletons.Count, holds = _holds, multiHits = _multiHits.Count, fields = _fields.Count,
-        burstPresentation = _burstPresentation?.Describe()
+        holdMaterials = _materials.Count, holdShaderFloats = _materials.Sum(state => state.FloatCount),
+        cancelledHoldFades = _cancelledHoldFades, burstPresentation = _burstPresentation?.Describe()
     };
 
     public bool CanRestore(GameMusicScene? scene)
@@ -95,6 +97,7 @@ internal sealed class NoteResetSnapshot
     {
         foreach (var root in _roots) root.SetActive(false);
         foreach (var script in _scripts) if (script) script.StopAllCoroutines();
+        _cancelledHoldFades = HoldFadeReset.Cancel(_actions);
 
         if (_multiHits.Count > 0)
         {
@@ -205,7 +208,9 @@ internal sealed class NoteResetSnapshot
             _actions.Add(sac);
             CaptureFields(sac, "m_ProtectLevel", "m_CurrentActionName", "m_CurrentSpineActionName",
                 "curActionKey", "m_IsPause", "m_HasDestroy", "m_HasAlpha", "m_Length", "m_MusicData");
-            if (sac.m_Mtrl && sac.m_Mtrl.HasProperty("_Color")) _materials.Add(new MaterialState(sac.m_Mtrl));
+            // Clip and SetAlpha change shader floats, independently of _Color.
+            // Capture the initialized material even when it has no _Color property.
+            if (sac.m_Mtrl) _materials.Add(new HoldMaterialState(sac.m_Mtrl));
         }
         if (component.TryCast<BaseSpineObjectController>() is { } controller)
             CaptureFields(controller, "m_IsVisible", "isIn");
@@ -325,12 +330,6 @@ internal sealed class NoteResetSnapshot
     private sealed record AnimatorState(Animator Animator, float Speed, bool Enabled)
     {
         public AnimatorState(Animator animator) : this(animator, animator.speed, animator.enabled) { }
-    }
-
-    private sealed record MaterialState(Material Material, Color Color)
-    {
-        public MaterialState(Material material) : this(material, material.color) { }
-        public void Restore() => Material.color = Color;
     }
 
     private sealed class RendererState
