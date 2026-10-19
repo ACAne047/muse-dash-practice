@@ -14,7 +14,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.0", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.1", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;
@@ -48,6 +48,7 @@ public sealed class PracticeMod : MelonMod
     private GUIStyle? _label;
     private float _audioOffset;
     private float _position;
+    private NoteResetSnapshot? _noteState;
     private readonly HashSet<string> _logged = new();
     private const string SupportedGame = "6.7.0";
 
@@ -80,6 +81,7 @@ public sealed class PracticeMod : MelonMod
             Patch(typeof(StageBattleComponent), "GameStart", postfix: nameof(StageStarted));
             Patch(typeof(StageBattleComponent), "End", prefix: nameof(InterceptEnd));
             Patch(typeof(StageBattleComponent), "Dead", prefix: nameof(InterceptDeath));
+            Patch(typeof(GameMusicScene), "PreLoadEnemy", prefix: nameof(BeforePreload), postfix: nameof(AfterPreload));
             Patch(typeof(UnityEngine.EventSystems.StandaloneInputModule), "Process", prefix: nameof(BlockMenuPointer));
             _ready = true;
             Log("ready", new { game = SupportedGame, persistenceGuards = 7 });
@@ -154,6 +156,26 @@ public sealed class PracticeMod : MelonMod
         return false;
     }
 
+    private static void BeforePreload() { if (Current is { } mod) mod._noteState = null; }
+
+    private static void AfterPreload(GameMusicScene __instance)
+    {
+        var mod = Current;
+        if (mod is null || !mod._ready) return;
+        try
+        {
+            // Capture after native initialization, before the first note is played.
+            // Re-running Init on reused controllers would register duplicate events.
+            mod._noteState = new NoteResetSnapshot(__instance);
+            mod.Log("note_baseline", mod._noteState.Describe());
+        }
+        catch (Exception error)
+        {
+            mod._noteState = null;
+            mod.Log("note_baseline_error", new { error = error.ToString() });
+        }
+    }
+
     private static bool BlockMenuPointer()
     {
         var mod = Current;
@@ -170,6 +192,7 @@ public sealed class PracticeMod : MelonMod
         Log("scene", new { sceneName, buildIndex });
         if (!_inBattle)
         {
+            _noteState = null;
             _seekPending = false;
             _restartPending = false;
             if (sceneName is "UISystem_PC" or "Welcome")
@@ -204,13 +227,14 @@ public sealed class PracticeMod : MelonMod
             {
                 if (!stage.isInGame) return;
                 _restartPending = false;
-                if (_fastLoop && !_seekPending)
+                if (_fastLoop && !_seekPending && _noteState?.CanRestore(GameGlobal.gGameMusicScene) == true)
                 {
                     RewindInScene(stage, audio);
                     return;
                 }
                 _seekPending = _enabled;
                 _startedAt = Time.realtimeSinceStartup;
+                if (_fastLoop) Log("reload_fallback", new { reason = "No intact pre-play note baseline" });
                 BattleHelper.GameRestart();
                 return;
             }
@@ -268,13 +292,17 @@ public sealed class PracticeMod : MelonMod
         if (FixUpdateTimer.precision != 100 || Math.Abs(audio.pitch - 1) > .001f)
             throw new InvalidOperationException("Unsupported timer precision or playback speed");
 
-        // Every round starts with the game's own full reset. Jump to a lead-in before A,
-        // allowing notes and holds for the practice interval to spawn normally.
+        // Jump to a lead-in before A, allowing notes and holds to spawn normally.
         var target = Math.Max(0, _a - 3f);
         var before = stage.timeFromMusicStart;
         _audioOffset = audio.time - before;
         if (Math.Abs(_audioOffset) > .5f) throw new InvalidOperationException("Unexpected audio/chart offset");
         _offsetCaptured = true;
+        if (_fastLoop && _noteState?.CanRestore(scene) == true)
+        {
+            RewindInScene(stage, audio);
+            return;
+        }
         if (target > before + .05f)
         {
             watch.Stop();
@@ -315,6 +343,8 @@ public sealed class PracticeMod : MelonMod
         var music = GameGlobal.gGameMusic ?? throw new InvalidOperationException("No chart controller");
         var scene = GameGlobal.gGameMusicScene ?? throw new InvalidOperationException("No scene controller");
         var watch = GameGlobal.stopwatch ?? throw new InvalidOperationException("No chart clock");
+        var noteState = _noteState ?? throw new InvalidOperationException("No pre-play note baseline");
+        if (!noteState.CanRestore(scene)) throw new InvalidOperationException("Preloaded note objects have changed");
         if (stage.isPause) stage.Resume(false);
         if (_b > audio.clip.length - .25f || _a >= audio.clip.length - 1 || FixUpdateTimer.precision != 100 || Math.Abs(audio.pitch - 1) > .001f)
             throw new InvalidOperationException("Unsupported range, timer or playback speed");
@@ -332,22 +362,9 @@ public sealed class PracticeMod : MelonMod
         audio.Pause();
         watch.Stop();
 
-        // Keep the scene, prefab cache and preloaded note objects. Each future CreateObj
-        // call reinitializes its note through BattleEnemyManager.ObjInit.
-        var hidden = new HashSet<int>();
-        void Hide(GameObject? obj)
-        {
-            if (obj is null || !obj || !hidden.Add(obj.GetInstanceID())) return;
-            if (obj.activeSelf) obj.SetActive(false);
-        }
-        if (scene.preloads is not null)
-            foreach (var obj in scene.preloads) Hide(obj);
-        if (scene.preloads1 is not null)
-            foreach (var list in scene.preloads1)
-                if (list is not null) foreach (var obj in list) Hide(obj);
-
         music.Reset();
-        GameGlobal.gGameTouchPlay.Reset();
+        ResetHeldInput();
+        noteState.Restore();
         var notes = stage.m_MusicTickData;
         for (var i = 0; i < notes.Count; i++)
         {
@@ -404,9 +421,28 @@ public sealed class PracticeMod : MelonMod
         _message = $"Round {_round}: {_a:F2}-{_b:F2}s | in-scene rewind | 3s lead-in";
         Log("fast_rewind", new { round = _round, before, target, after = stage.timeFromMusicStart,
             audioTime = audio.time, offset = _audioOffset, resetMs = started.Elapsed.TotalMilliseconds,
-            sceneHandle, clipId, stageId, noteObjects = hidden.Count,
+            sceneHandle, clipId, stageId, noteObjects = noteState.RootCount, resetState = noteState.Describe(),
             resetPerfect = TaskStageTarget.instance.m_PerfectResult, resetScore = TaskStageTarget.instance.m_Score });
         Probe(stage, audio);
+    }
+
+    private static void ResetHeldInput()
+    {
+        var touch = GameGlobal.gGameTouchPlay;
+        touch.Reset();
+        touch.m_AirPressIndex?.Clear();
+        touch.m_RoadPressIndex?.Clear();
+        touch.m_AirKeyIndex?.Clear();
+        touch.m_RoadKeyIndex?.Clear();
+        touch.m_AllKeyPressedList?.Clear();
+        touch.m_CurFingerIds?.Clear();
+        touch.isPunch = false;
+        touch.isReactAir = false;
+        touch.isReactGround = false;
+        touch.m_PressHardTime = default;
+        touch.m_PunchHardTime = default;
+        touch.m_JumpHardTime = default;
+        GameGlobal.gTouch?.Reset();
     }
 
     private static float DecimalSeconds(Il2CppSystem.Decimal value) =>
