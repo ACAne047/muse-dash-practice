@@ -9,11 +9,12 @@ using Il2CppFormulaBase;
 using Il2CppGameLogic;
 using Il2CppAssets.Scripts.GameCore.HostComponent;
 using Il2CppDYUnityLib;
+using Il2CppAssets.Scripts.GameCore.Managers;
 using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.2.1", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.0", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;
@@ -25,6 +26,8 @@ public sealed class PracticeMod : MelonMod
     private bool _enabled;
     private bool _panel = true;
     private bool _loop = true;
+    private bool _fastLoop = true;
+    private bool _offsetCaptured;
     private bool _ready;
     private bool _seekPending;
     private bool _restartPending;
@@ -122,6 +125,7 @@ public sealed class PracticeMod : MelonMod
         mod._seekPending = mod._enabled;
         mod._startedAt = Time.realtimeSinceStartup;
         mod._firstProbe = true;
+        mod._offsetCaptured = false;
         if (mod._enabled && DataHelper.selectedMusicUid?.StartsWith("album_") == true)
         {
             mod._seekPending = false;
@@ -200,6 +204,11 @@ public sealed class PracticeMod : MelonMod
             {
                 if (!stage.isInGame) return;
                 _restartPending = false;
+                if (_fastLoop && !_seekPending)
+                {
+                    RewindInScene(stage, audio);
+                    return;
+                }
                 _seekPending = _enabled;
                 _startedAt = Time.realtimeSinceStartup;
                 BattleHelper.GameRestart();
@@ -265,6 +274,7 @@ public sealed class PracticeMod : MelonMod
         var before = stage.timeFromMusicStart;
         _audioOffset = audio.time - before;
         if (Math.Abs(_audioOffset) > .5f) throw new InvalidOperationException("Unexpected audio/chart offset");
+        _offsetCaptured = true;
         if (target > before + .05f)
         {
             watch.Stop();
@@ -296,6 +306,106 @@ public sealed class PracticeMod : MelonMod
         _message = $"Round {_round}: {_a:F2}-{_b:F2}s | 3s lead-in | F9 repeat";
         Log("seek", new { round = _round, a = _a, b = _b, target, before, after = stage.timeFromMusicStart, audioTime = audio.time, offset = _audioOffset,
             genIndex = BattleEnemyManager.instance.m_CurrentGenIdx, frequency = Il2CppSystem.Diagnostics.Stopwatch.Frequency });
+        Probe(stage, audio);
+    }
+
+    private void RewindInScene(StageBattleComponent stage, AudioSource audio)
+    {
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        var music = GameGlobal.gGameMusic ?? throw new InvalidOperationException("No chart controller");
+        var scene = GameGlobal.gGameMusicScene ?? throw new InvalidOperationException("No scene controller");
+        var watch = GameGlobal.stopwatch ?? throw new InvalidOperationException("No chart clock");
+        if (stage.isPause) stage.Resume(false);
+        if (_b > audio.clip.length - .25f || _a >= audio.clip.length - 1 || FixUpdateTimer.precision != 100 || Math.Abs(audio.pitch - 1) > .001f)
+            throw new InvalidOperationException("Unsupported range, timer or playback speed");
+        var before = stage.timeFromMusicStart;
+        if (!_offsetCaptured)
+        {
+            _audioOffset = audio.time - before;
+            if (Math.Abs(_audioOffset) > .5f) throw new InvalidOperationException("Unexpected audio/chart offset");
+            _offsetCaptured = true;
+        }
+        var target = Math.Max(0, _a - 3f);
+        var sceneHandle = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+        var clipId = audio.clip.GetInstanceID();
+        var stageId = stage.Pointer.ToInt64();
+        audio.Pause();
+        watch.Stop();
+
+        // Keep the scene, prefab cache and preloaded note objects. Each future CreateObj
+        // call reinitializes its note through BattleEnemyManager.ObjInit.
+        var hidden = new HashSet<int>();
+        void Hide(GameObject? obj)
+        {
+            if (obj is null || !obj || !hidden.Add(obj.GetInstanceID())) return;
+            if (obj.activeSelf) obj.SetActive(false);
+        }
+        if (scene.preloads is not null)
+            foreach (var obj in scene.preloads) Hide(obj);
+        if (scene.preloads1 is not null)
+            foreach (var list in scene.preloads1)
+                if (list is not null) foreach (var obj in list) Hide(obj);
+
+        music.Reset();
+        GameGlobal.gGameTouchPlay.Reset();
+        var notes = stage.m_MusicTickData;
+        for (var i = 0; i < notes.Count; i++)
+        {
+            var note = notes[i];
+            note.isLongPressing = false;
+            notes[i] = note;
+        }
+        var sorted = stage.m_SortedMusicTickData;
+        if (sorted is not null)
+            for (var i = 0; i < sorted.Count; i++)
+            {
+                var note = sorted[i];
+                note.isLongPressing = false;
+                sorted[i] = note;
+            }
+        stage.InitTimeNodeOrder();
+        BattleEnemyManager.instance.Init();
+        BattleEnemyManager.instance.PreloadCreateBattleEnemy();
+        TaskStageTarget.instance.Reset();
+        stage.isDead = false;
+        stage.isSucceed = false;
+        stage.failTime = 0;
+        BattleRoleAttributeComponent.instance.AddHp(BattleRoleAttributeComponent.instance.GetHpMax());
+        FeverManager.Instance.ResetFever();
+
+        var lastSkipped = 0;
+        for (var i = 0; i < notes.Count; i++)
+        {
+            var note = notes[i];
+            if (DecimalSeconds(note.showTick) < target) lastSkipped = Math.Max(lastSkipped, note.objId);
+        }
+        BattleEnemyManager.instance.m_CurrentGenIdx = lastSkipped;
+        scene.passIdx = lastSkipped;
+        scene.prePassIdx = lastSkipped;
+        music.m_TnoIdx = -1;
+        music.m_LastMusicTick = target * 1000;
+        music.m_IsEnd = false;
+        music.m_IsVictoryShow = false;
+        var tick = (int)Math.Floor(target * FixUpdateTimer.precision);
+        MoveTimer(music.objTimer, tick);
+        MoveTimer(music.stepTimer, tick);
+        MoveTimer(scene.stepTimer, tick);
+        if (music.sceneObjTimer?.IsRunning() == true) MoveTimer(music.sceneObjTimer, tick);
+        watch.elapsed = (long)(target * Il2CppSystem.Diagnostics.Stopwatch.Frequency);
+        audio.timeSamples = Math.Clamp((int)((target + _audioOffset) * audio.clip.frequency), 0, audio.clip.samples - 1);
+        audio.UnPause();
+        watch.Start();
+        if (Math.Abs(stage.timeFromMusicStart - target) > .08f)
+            throw new InvalidOperationException("Rewind clock mismatch");
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle != sceneHandle || audio.clip.GetInstanceID() != clipId || stage.Pointer.ToInt64() != stageId)
+            throw new InvalidOperationException("Scene or audio resource changed during rewind");
+        _round++;
+        _position = target;
+        _message = $"Round {_round}: {_a:F2}-{_b:F2}s | in-scene rewind | 3s lead-in";
+        Log("fast_rewind", new { round = _round, before, target, after = stage.timeFromMusicStart,
+            audioTime = audio.time, offset = _audioOffset, resetMs = started.Elapsed.TotalMilliseconds,
+            sceneHandle, clipId, stageId, noteObjects = hidden.Count,
+            resetPerfect = TaskStageTarget.instance.m_PerfectResult, resetScore = TaskStageTarget.instance.m_Score });
         Probe(stage, audio);
     }
 
@@ -346,6 +456,7 @@ public sealed class PracticeMod : MelonMod
             objTick = music?.objTimer?.passedTick, stepTick = music?.stepTimer?.passedTick,
             sceneObjTick = music?.sceneObjTimer?.passedTick, sceneStepTick = scene?.stepTimer?.passedTick,
             sceneIndex = scene?.passIdx, genIndex = BattleEnemyManager.instance?.m_CurrentGenIdx,
+            sceneHandle = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle, clipId = audio.clip?.GetInstanceID(),
             score = TaskStageTarget.instance.m_Score, perfect = TaskStageTarget.instance.m_PerfectResult,
             great = TaskStageTarget.instance.m_GreatResult, miss = TaskStageTarget.instance.m_MissResult
         });
@@ -384,6 +495,7 @@ public sealed class PracticeMod : MelonMod
             if (root.TryGetProperty("a", out var a)) _aText = a.GetSingle().ToString(CultureInfo.InvariantCulture);
             if (root.TryGetProperty("b", out var b)) _bText = b.GetSingle().ToString(CultureInfo.InvariantCulture);
             if (root.TryGetProperty("loop", out var loop)) _loop = loop.GetBoolean();
+            if (root.TryGetProperty("fast", out var fast)) _fastLoop = fast.GetBoolean();
             switch (action)
             {
                 case "arm": Arm(); break;
@@ -423,6 +535,7 @@ public sealed class PracticeMod : MelonMod
             GUI.Label(new Rect(235, 57, 95, 24), "B (seconds)");
             _bText = GUI.TextField(new Rect(330, 57, 95, 26), _bText, 12);
             _loop = GUI.Toggle(new Rect(24, 94, 180, 26), _loop, "Repeat A-B");
+            _fastLoop = GUI.Toggle(new Rect(220, 94, 300, 26), _fastLoop, "In-scene rewind (experimental)");
             if (GUI.Button(new Rect(24, 130, 165, 32), _enabled ? "Restart at A" : "Arm practice"))
                 Arm();
             if (GUI.Button(new Rect(200, 130, 165, 32), "Exit practice chart")) RequestExit();
