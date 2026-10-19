@@ -14,7 +14,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.3", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.4", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;

@@ -27,6 +27,7 @@ internal sealed class NoteResetSnapshot
     private readonly List<SpineActionController> _actions = new();
     private readonly List<LongPressNoteVisibleController> _holdVisibility = new();
     private readonly List<MultHitEnemyController> _multiHits = new();
+    private readonly BurstPresentationReset? _burstPresentation;
     private readonly List<FieldState> _fields = new();
     private readonly HashSet<long> _componentPointers = new();
     private readonly List<Il2CppAssets.Scripts.GameCore.Interface.IUpdate> _initialUpdates = new();
@@ -63,6 +64,7 @@ internal sealed class NoteResetSnapshot
                 CaptureComponent(component);
             }
         }
+        if (_multiHits.Count > 0) _burstPresentation = new BurstPresentationReset();
         var database = DataHelperScene();
         CaptureUpdates(database?.m_Updates, _initialUpdates);
         CaptureUpdates(database?.m_FixedUpdates, _initialFixedUpdates);
@@ -78,7 +80,8 @@ internal sealed class NoteResetSnapshot
     public object Describe() => new
     {
         roots = RootCount, transforms = _transforms.Count, animators = _animators.Count,
-        skeletons = _skeletons.Count, holds = _holds, multiHits = _multiHits.Count, fields = _fields.Count
+        skeletons = _skeletons.Count, holds = _holds, multiHits = _multiHits.Count, fields = _fields.Count,
+        burstPresentation = _burstPresentation?.Describe()
     };
 
     public bool CanRestore(GameMusicScene? scene)
@@ -163,6 +166,8 @@ internal sealed class NoteResetSnapshot
             if (!_rootIds.Contains(state.Transform.gameObject.GetInstanceID()))
                 state.Transform.gameObject.SetActive(state.Active);
         foreach (var root in _roots) root.SetActive(false);
+
+        _burstPresentation?.Restore();
 
         // Fail closed if a restore is incomplete, before advancing chart time.
         foreach (var state in _transforms.Values)
