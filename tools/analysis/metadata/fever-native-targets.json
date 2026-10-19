@@ -1,0 +1,80 @@
+[
+  {
+    "Name": "System.Void FormulaBase.StageBattleComponent::Pause(System.Boolean)",
+    "Label": "StageBattleComponent.Pause",
+    "Rva": "0x1D74C90",
+    "Length": "0x294"
+  },
+  {
+    "Name": "System.Void FormulaBase.StageBattleComponent::Resume(System.Boolean)",
+    "Label": "StageBattleComponent.Resume",
+    "Rva": "0x1D75CA0",
+    "Length": "0x2FF"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.FeverManager::ResetFever()",
+    "Label": "FeverManager.ResetFever",
+    "Rva": "0x214F160",
+    "Length": "0x2C"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.FeverManager::InvokeFever()",
+    "Label": "FeverManager.InvokeFever",
+    "Rva": "0x214EF50",
+    "Length": "0x1A2"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractFeverManager::FeverEnd()",
+    "Label": "AbstractFeverManager.FeverEnd",
+    "Rva": "0x213EDE0",
+    "Length": "0xD7"
+  },
+  {
+    "Name": "System.Boolean Assets.Scripts.GameCore.Managers.AbstractFeverManager::InvokeFever()",
+    "Label": "AbstractFeverManager.InvokeFever",
+    "Rva": "0x213EFF0",
+    "Length": "0x236"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractFeverManager::Pause(System.Boolean)",
+    "Label": "AbstractFeverManager.Pause",
+    "Rva": "0x4EB220",
+    "Length": "0x5"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractFeverManager::Resume()",
+    "Label": "AbstractFeverManager.Resume",
+    "Rva": "0x778C10",
+    "Length": "0x5"
+  },
+  {
+    "Name": "System.Boolean Assets.Scripts.GameCore.Managers.ArkNightsAmiyaFeverManager::InvokeFever()",
+    "Label": "ArkNightsAmiyaFeverManager.InvokeFever",
+    "Rva": "0x2145110",
+    "Length": "0xD4"
+  },
+  {
+    "Name": "System.Boolean Assets.Scripts.GameCore.Managers.TouhouFeverManager::InvokeFever()",
+    "Label": "TouhouFeverManager.InvokeFever",
+    "Rva": "0x1E94560",
+    "Length": "0x2CA"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.TouhouFeverManager::FeverEnd()",
+    "Label": "TouhouFeverManager.FeverEnd",
+    "Rva": "0x1E94470",
+    "Length": "0xCA"
+  },
+  {
+    "Name": "System.Boolean Assets.Scripts.GameCore.Managers.WisadelFeverManager::InvokeFever()",
+    "Label": "WisadelFeverManager.InvokeFever",
+    "Rva": "0x1E98230",
+    "Length": "0x2A3"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.WisadelFeverManager::FeverEnd()",
+    "Label": "WisadelFeverManager.FeverEnd",
+    "Rva": "0x1E98160",
+    "Length": "0xCD"
+  }
+]

@@ -1,0 +1,225 @@
+{
+  "Type": "SpineActionController",
+  "Fields": [
+    {
+      "Name": "m_ObjController",
+      "Offset": [
+        "0x18"
+      ]
+    },
+    {
+      "Name": "m_ProtectLevel",
+      "Offset": [
+        "0x20"
+      ]
+    },
+    {
+      "Name": "m_CurrentActionName",
+      "Offset": [
+        "0x28"
+      ]
+    },
+    {
+      "Name": "m_CurrentSpineActionName",
+      "Offset": [
+        "0x30"
+      ]
+    },
+    {
+      "Name": "m_SkeletonAnimation",
+      "Offset": [
+        "0x38"
+      ]
+    },
+    {
+      "Name": "m_Bones",
+      "Offset": [
+        "0x40"
+      ]
+    },
+    {
+      "Name": "m_DoNothings",
+      "Offset": [
+        "0x48"
+      ]
+    },
+    {
+      "Name": "m_SyncObjectsBuffer",
+      "Offset": [
+        "0x50"
+      ]
+    },
+    {
+      "Name": "actionData",
+      "Offset": [
+        "0x78"
+      ]
+    },
+    {
+      "Name": "m_FeverActionData",
+      "Offset": [
+        "0x80"
+      ]
+    },
+    {
+      "Name": "actionMode",
+      "Offset": [
+        "0x88"
+      ]
+    },
+    {
+      "Name": "startDelay",
+      "Offset": [
+        "0x8C"
+      ]
+    },
+    {
+      "Name": "duration",
+      "Offset": [
+        "0x90"
+      ]
+    },
+    {
+      "Name": "scale",
+      "Offset": [
+        "0x94"
+      ]
+    },
+    {
+      "Name": "lengthRate",
+      "Offset": [
+        "0x98"
+      ]
+    },
+    {
+      "Name": "rendererPreb",
+      "Offset": [
+        "0xA0"
+      ]
+    },
+    {
+      "Name": "destroyEffect",
+      "Offset": [
+        "0xA8"
+      ]
+    },
+    {
+      "Name": "clipEffect",
+      "Offset": [
+        "0xB0"
+      ]
+    },
+    {
+      "Name": "m_CatchObj",
+      "Offset": [
+        "0xB8"
+      ]
+    },
+    {
+      "Name": "rotateRuration",
+      "Offset": [
+        "0xC0"
+      ]
+    },
+    {
+      "Name": "m_Mtrl",
+      "Offset": [
+        "0xC8"
+      ]
+    },
+    {
+      "Name": "m_Renderer",
+      "Offset": [
+        "0xD0"
+      ]
+    },
+    {
+      "Name": "m_Length",
+      "Offset": [
+        "0xD8"
+      ]
+    },
+    {
+      "Name": "m_Idx",
+      "Offset": [
+        "0xE8"
+      ]
+    },
+    {
+      "Name": "m_HasDestroy",
+      "Offset": [
+        "0xEC"
+      ]
+    },
+    {
+      "Name": "m_HasAlpha",
+      "Offset": [
+        "0xED"
+      ]
+    },
+    {
+      "Name": "m_MusicData",
+      "Offset": [
+        "0xF0"
+      ]
+    },
+    {
+      "Name": "m_StartStar",
+      "Offset": [
+        "0x250"
+      ]
+    },
+    {
+      "Name": "m_EndStar",
+      "Offset": [
+        "0x258"
+      ]
+    },
+    {
+      "Name": "s_UnityGameManger",
+      "Offset": []
+    },
+    {
+      "Name": "m_SceneIdx",
+      "Offset": [
+        "0x260"
+      ]
+    },
+    {
+      "Name": "<curActionKey>k__BackingField",
+      "Offset": [
+        "0x268"
+      ]
+    },
+    {
+      "Name": "m_IsPause",
+      "Offset": [
+        "0x270"
+      ]
+    },
+    {
+      "Name": "animator",
+      "Offset": [
+        "0x278"
+      ]
+    },
+    {
+      "Name": "m_Animation",
+      "Offset": [
+        "0x280"
+      ]
+    },
+    {
+      "Name": "m_NoteEffects",
+      "Offset": [
+        "0x288"
+      ]
+    },
+    {
+      "Name": "m_StarSpeed",
+      "Offset": [
+        "0x290"
+      ]
+    }
+  ]
+}

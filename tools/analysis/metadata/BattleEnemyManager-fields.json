@@ -1,0 +1,77 @@
+{
+  "Type": "BattleEnemyManager",
+  "Fields": [
+    {
+      "Name": "m_CurrentGenIdx",
+      "Offset": [
+        "0x10"
+      ]
+    },
+    {
+      "Name": "m_Hp",
+      "Offset": [
+        "0x18"
+      ]
+    },
+    {
+      "Name": "m_Evaluates",
+      "Offset": [
+        "0x20"
+      ]
+    },
+    {
+      "Name": "m_LeftRight",
+      "Offset": [
+        "0x28"
+      ]
+    },
+    {
+      "Name": "isAirPressing",
+      "Offset": [
+        "0x30"
+      ]
+    },
+    {
+      "Name": "isGroundPressing",
+      "Offset": [
+        "0x31"
+      ]
+    },
+    {
+      "Name": "isCharacterGroundHitting",
+      "Offset": [
+        "0x32"
+      ]
+    },
+    {
+      "Name": "isCharacterAirHitting",
+      "Offset": [
+        "0x33"
+      ]
+    },
+    {
+      "Name": "isGhostHitting",
+      "Offset": [
+        "0x34"
+      ]
+    },
+    {
+      "Name": "isGhostOnAir",
+      "Offset": [
+        "0x35"
+      ]
+    },
+    {
+      "Name": "isMulHitting",
+      "Offset": [
+        "0x36"
+      ]
+    },
+    {
+      "Name": "damageRatio",
+      "Offset": [
+        "0x38"
+      ]
+    }
+  ]
+}

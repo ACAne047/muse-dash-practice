@@ -1,0 +1,8 @@
+{
+  "Clip.float": "_ClipValue",
+  "SetAlpha.float": "_Alpha",
+  "SetLength.float": "_LengthRatio",
+  "Slider.keyword": "_USE_GRADIENT_FADE",
+  "Slider.float1": "_GradientFadeClip",
+  "Slider.float2": "_GradientWidth"
+}

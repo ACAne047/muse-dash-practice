@@ -1,0 +1,117 @@
+{
+  "Type": "AbstractGirlManager",
+  "Fields": [
+    {
+      "Name": "m_IsJumpingAction",
+      "Offset": [
+        "0x10"
+      ]
+    },
+    {
+      "Name": "m_CurGirlActionController",
+      "Offset": [
+        "0x18"
+      ]
+    },
+    {
+      "Name": "m_CurAnimator",
+      "Offset": [
+        "0x20"
+      ]
+    },
+    {
+      "Name": "m_Sac",
+      "Offset": [
+        "0x28"
+      ]
+    },
+    {
+      "Name": "m_HurtVoice",
+      "Offset": [
+        "0x30"
+      ]
+    },
+    {
+      "Name": "m_EmptyHitVoice",
+      "Offset": [
+        "0x38"
+      ]
+    },
+    {
+      "Name": "m_IsAir",
+      "Offset": [
+        "0x40"
+      ]
+    },
+    {
+      "Name": "m_GirlEffectAs",
+      "Offset": [
+        "0x48"
+      ]
+    },
+    {
+      "Name": "<isThisFrameJumpUp>k__BackingField",
+      "Offset": [
+        "0x50"
+      ]
+    },
+    {
+      "Name": "<isThisFrameJumpDown>k__BackingField",
+      "Offset": [
+        "0x51"
+      ]
+    },
+    {
+      "Name": "hurtCoroutine",
+      "Offset": [
+        "0x58"
+      ]
+    },
+    {
+      "Name": "m_DownHitTime",
+      "Offset": [
+        "0x60"
+      ]
+    },
+    {
+      "Name": "m_MulHitTime",
+      "Offset": [
+        "0x68"
+      ]
+    },
+    {
+      "Name": "m_MulHitHardTime",
+      "Offset": [
+        "0x78"
+      ]
+    },
+    {
+      "Name": "<SubCtrlEntities>k__BackingField",
+      "Offset": [
+        "0x88"
+      ]
+    },
+    {
+      "Name": "girl",
+      "Offset": [
+        "0x90"
+      ]
+    },
+    {
+      "Name": "girlGhost",
+      "Offset": [
+        "0x98"
+      ]
+    },
+    {
+      "Name": "play_wait_for_comeout",
+      "Offset": []
+    },
+    {
+      "Name": "isCommingOut",
+      "Offset": [
+        "0xA0"
+      ]
+    }
+  ]
+}

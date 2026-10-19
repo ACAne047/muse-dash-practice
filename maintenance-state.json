@@ -1,0 +1,33 @@
+{
+  "recorded_on": "2026-10-20",
+  "version": "0.3.7",
+  "source_directory": "src",
+  "release_directory": "releases/0.3.7",
+  "release_dll": "releases/0.3.7/MuseDashPracticePrototype.dll",
+  "dll_sha256": "3CE1BAD45CAF21864055412CCC25F4B661176A87D33413A0B2E10835E78809BA",
+  "game_version": "6.7.0",
+  "unity_version": "2019.4.41f1",
+  "melonloader_version": "0.7.0",
+  "gameassembly_sha256": "0506A723A59BFCFF3BBF335A9AE583DBD72B2435A776D1E6E6E383EC2379D4A3",
+  "dotnet_sdk_verified": "6.0.424",
+  "target_framework": "net6.0",
+  "platform": "Windows x64 IL2CPP",
+  "game_root_environment_variable": "MUSEDASH_GAME_ROOT",
+  "installed_dll_relative": "Mods/MuseDashPracticePrototype.dll",
+  "diagnostics_relative": "UserData/MuseDashPracticePrototype/diagnostics.ndjson",
+  "diagnostics_overwritten_on_launch": true,
+  "chart_support": {
+    "official": true,
+    "custom": true,
+    "basis": "User confirmed current custom charts work; preserve compatibility.",
+    "implementation_note": "Three album_ prefix checks remain in the unchanged 0.3.7 runtime source; actual custom chart identifier coverage was not re-evaluated during migration."
+  },
+  "history": {
+    "type": "Snapshot imports, not original development commits",
+    "tags": ["v0.2.1", "v0.3.0", "v0.3.1", "v0.3.2", "v0.3.3", "v0.3.4", "v0.3.5", "v0.3.6", "v0.3.7"],
+    "original_release_archive_sha256": "D062D0E65EB2CFB510ED2D137E943297140051480A610FDBEF0E71DFBE725083"
+  },
+  "validation_record": "docs/仓库验证.md",
+  "maintenance_document": "docs/维护记录.md",
+  "agent_entry": "AGENTS.md"
+}

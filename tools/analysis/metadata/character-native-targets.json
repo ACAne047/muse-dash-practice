@@ -1,0 +1,194 @@
+[
+  {
+    "Name": "System.Void LongActionController::PlayLongPressEffect(System.Boolean,System.Boolean)",
+    "Label": "LongActionController.PlayLongPressEffect",
+    "Rva": "0x208B180",
+    "Length": "0x100"
+  },
+  {
+    "Name": "System.Void LongActionController::StopStars()",
+    "Label": "LongActionController.StopStars",
+    "Rva": "0x208B4A0",
+    "Length": "0x198"
+  },
+  {
+    "Name": "System.Void LongActionController::InitClipParticle(UnityEngine.GameObject,System.Boolean)",
+    "Label": "LongActionController.InitClipParticle",
+    "Rva": "0x208A980",
+    "Length": "0x4F5"
+  },
+  {
+    "Name": "System.Void SpineActionController::Init(System.Int32,System.Int32)",
+    "Label": "SpineActionController.Init",
+    "Rva": "0x1E33510",
+    "Length": "0xA94"
+  },
+  {
+    "Name": "System.Void SpineActionController::PlayLongPressEffect(System.Boolean,System.Boolean)",
+    "Label": "SpineActionController.PlayLongPressEffect",
+    "Rva": "0x1E36360",
+    "Length": "0x14F"
+  },
+  {
+    "Name": "System.Void GirlActionController::Init(System.Int32)",
+    "Label": "GirlActionController.Init",
+    "Rva": "0x1E6C130",
+    "Length": "0x361"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.HostComponent.BattleEnemyManager::Init()",
+    "Label": "BattleEnemyManager.Init",
+    "Rva": "0x214A010",
+    "Length": "0x19"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::InitAutoPlay()",
+    "Label": "AbstractGirlManager.InitAutoPlay",
+    "Rva": "0x21406F0",
+    "Length": "0xC4A"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::AwakeInit()",
+    "Label": "AbstractGirlManager.AwakeInit",
+    "Rva": "0x213F800",
+    "Length": "0x4AA"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::PlayLongEffectSound(System.Boolean)",
+    "Label": "AbstractGirlManager.PlayLongEffectSound",
+    "Rva": "0x2141DB0",
+    "Length": "0x11F"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::OnBgmPlayAndBattleStart()",
+    "Label": "AbstractGirlManager.OnBgmPlayAndBattleStart",
+    "Rva": "0x421BE0",
+    "Length": "0x3"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::PlayLongPressAnimator(System.Boolean,System.Boolean)",
+    "Label": "AbstractGirlManager.PlayLongPressAnimator",
+    "Rva": "0x2141ED0",
+    "Length": "0x34A"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::SetTone(System.Boolean)",
+    "Label": "AbstractGirlManager.SetTone",
+    "Rva": "0xAAA400",
+    "Length": "0x4"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::SetJumpingAction(System.Boolean)",
+    "Label": "AbstractGirlManager.SetJumpingAction",
+    "Rva": "0x479C60",
+    "Length": "0x4"
+  },
+  {
+    "Name": "System.Boolean Assets.Scripts.GameCore.Managers.AbstractGirlManager::IsJumpingAction()",
+    "Label": "AbstractGirlManager.IsJumpingAction",
+    "Rva": "0x479CA0",
+    "Length": "0x5"
+  },
+  {
+    "Name": "System.Boolean Assets.Scripts.GameCore.Managers.AbstractGirlManager::Assets.Scripts.GameCore.CharacterMovement.ICharacterMovementHostContext.get_isJumpingAction()",
+    "Label": "AbstractGirlManager.Assets.Scripts.GameCore.CharacterMovement.ICharacterMovementHostContext.get_isJumpingAction",
+    "Rva": "0x479CA0",
+    "Length": "0x5"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::Assets.Scripts.GameCore.CharacterMovement.ICharacterMovementHostContext.SetJumpingAction(System.Boolean)",
+    "Label": "AbstractGirlManager.Assets.Scripts.GameCore.CharacterMovement.ICharacterMovementHostContext.SetJumpingAction",
+    "Rva": "0xF04200",
+    "Length": "0x11"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::Assets.Scripts.GameCore.CharacterMovement.ICharacterMovementHostContext.SetTone(System.Boolean)",
+    "Label": "AbstractGirlManager.Assets.Scripts.GameCore.CharacterMovement.ICharacterMovementHostContext.SetTone",
+    "Rva": "0xA8C940",
+    "Length": "0x11"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::Assets.Scripts.GameCore.CharacterMovement.ICharacterMovementHostContext.PlayLongEffectSound(System.Boolean)",
+    "Label": "AbstractGirlManager.Assets.Scripts.GameCore.CharacterMovement.ICharacterMovementHostContext.PlayLongEffectSound",
+    "Rva": "0x213F780",
+    "Length": "0x8"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.AbstractGirlManager::<AwakeInit>b__39_0(System.Single)",
+    "Label": "AbstractGirlManager.<AwakeInit>b__39_0",
+    "Rva": "0x491320",
+    "Length": "0x7"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.GeneralGirlManager::PlayRandomHitNothingAnim()",
+    "Label": "GeneralGirlManager.PlayRandomHitNothingAnim",
+    "Rva": "0x2150F00",
+    "Length": "0x4C"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.GeneralGirlManager::AutoPlay(FormulaBase.TimeNodeOrder,System.Decimal&,System.Boolean&)",
+    "Label": "GeneralGirlManager.AutoPlay",
+    "Rva": "0x2150960",
+    "Length": "0xD6"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.GeneralGirlManager::PlayLongEndAnimator(System.Boolean)",
+    "Label": "GeneralGirlManager.PlayLongEndAnimator",
+    "Rva": "0x2150D80",
+    "Length": "0xB2"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.Managers.GeneralGirlManager::PlayLongPressAnimator(System.Boolean,System.Boolean)",
+    "Label": "GeneralGirlManager.PlayLongPressAnimator",
+    "Rva": "0x2150E40",
+    "Length": "0xBB"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.CharacterMovement.NormalMovementBehavior::PlayRandomHitNothingAnim()",
+    "Label": "NormalMovementBehavior.PlayRandomHitNothingAnim",
+    "Rva": "0x1E20160",
+    "Length": "0x772"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.CharacterMovement.NormalMovementBehavior::AutoPlay(FormulaBase.TimeNodeOrder,System.Decimal&,System.Boolean&)",
+    "Label": "NormalMovementBehavior.AutoPlay",
+    "Rva": "0x1E1E430",
+    "Length": "0xCB8"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.CharacterMovement.NormalMovementBehavior::PlayLongEndAnimator(System.Boolean)",
+    "Label": "NormalMovementBehavior.PlayLongEndAnimator",
+    "Rva": "0x1E1FB80",
+    "Length": "0x103"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.CharacterMovement.NormalMovementBehavior::PlayLongPressAnimator(System.Boolean,System.Boolean)",
+    "Label": "NormalMovementBehavior.PlayLongPressAnimator",
+    "Rva": "0x1E1FC90",
+    "Length": "0x4C7"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.CharacterMovement.PersistentFloatMovementBehavior::PlayRandomHitNothingAnim()",
+    "Label": "PersistentFloatMovementBehavior.PlayRandomHitNothingAnim",
+    "Rva": "0x1E24130",
+    "Length": "0x64A"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.CharacterMovement.PersistentFloatMovementBehavior::AutoPlay(FormulaBase.TimeNodeOrder,System.Decimal&,System.Boolean&)",
+    "Label": "PersistentFloatMovementBehavior.AutoPlay",
+    "Rva": "0x1E22C00",
+    "Length": "0xD54"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.CharacterMovement.PersistentFloatMovementBehavior::PlayLongEndAnimator(System.Boolean)",
+    "Label": "PersistentFloatMovementBehavior.PlayLongEndAnimator",
+    "Rva": "0x1E23E20",
+    "Length": "0x9C"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.CharacterMovement.PersistentFloatMovementBehavior::PlayLongPressAnimator(System.Boolean,System.Boolean)",
+    "Label": "PersistentFloatMovementBehavior.PlayLongPressAnimator",
+    "Rva": "0x1E23EC0",
+    "Length": "0x267"
+  }
+]

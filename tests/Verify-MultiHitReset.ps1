@@ -1,9 +1,12 @@
-param([string]$GameRoot = 'D:\Lilywhite\Steam\steamapps\common\Muse Dash')
+param(
+    [string]$GameRoot = $env:MUSEDASH_GAME_ROOT,
+    [string]$ModPath = (Join-Path $PSScriptRoot '..\artifacts\mod\MuseDashPracticePrototype.dll')
+)
 $ErrorActionPreference = 'Stop'
 [void][Reflection.Assembly]::LoadFrom((Join-Path $GameRoot 'MelonLoader\net6\Mono.Cecil.dll'))
 $native = [Mono.Cecil.AssemblyDefinition]::ReadAssembly((Join-Path $GameRoot 'MelonLoader\Dependencies\Il2CppAssemblyGenerator\Cpp2IL\cpp2il_out\Assembly-CSharp.dll'))
 $proxy = [Mono.Cecil.AssemblyDefinition]::ReadAssembly((Join-Path $GameRoot 'MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll'))
-$built = [Mono.Cecil.AssemblyDefinition]::ReadAssembly((Join-Path $PSScriptRoot '..\MuseDashPracticePrototype.dll'))
+$built = [Mono.Cecil.AssemblyDefinition]::ReadAssembly($ModPath)
 try {
     $nativeType = $native.MainModule.Types | Where-Object {$_.FullName -eq 'MultHitEnemyController'}
     $proxyType = $proxy.MainModule.Types | Where-Object {$_.FullName -eq 'Il2Cpp.MultHitEnemyController'}

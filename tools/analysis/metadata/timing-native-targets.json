@@ -1,0 +1,11 @@
+[
+  {"Label": "get_timeFromMusicStart", "Rva": "0x1d77440", "Length": "0x7b"},
+  {"Label": "GameMusic.InitTimer", "Rva": "0x495f40", "Length": "0x70d"},
+  {"Label": "GameMusicScene.InitTimer", "Rva": "0x1e5fb40", "Length": "0x33d"},
+  {"Label": "StageBattle.GameRestart", "Rva": "0x1d70790", "Length": "0x75"},
+  {"Label": "Timer.SetPassTick", "Rva": "0x52fe20", "Length": "0x0a"},
+  {"Label": "Timer.Init", "Rva": "0x52f6d0", "Length": "0x181"},
+  {"Label": "Timer.OnTick", "Rva": "0x52f8d0", "Length": "0x230"},
+  {"Label": "StageBattle.GameStart", "Rva": "0x1d70810", "Length": "0x354"},
+  {"Label": "StageBattle.InitGame", "Rva": "0x1d72230", "Length": "0x389"}
+]

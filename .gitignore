@@ -1,0 +1,17 @@
+artifacts/
+**/bin/
+**/obj/
+**/__pycache__/
+.vs/
+.vscode/
+.venv/
+*.user
+*.suo
+*.log
+*.ndjson
+*.disabled
+backups/
+UserData/
+GameAssembly.dll
+Assembly-CSharp.dll
+global-metadata.dat

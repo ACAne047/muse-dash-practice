@@ -7,10 +7,14 @@
     <PlatformTarget>x64</PlatformTarget>
     <AssemblyName>MuseDashPracticePrototype</AssemblyName>
     <Version>0.3.7</Version>
-    <GameRoot Condition="'$(GameRoot)' == ''">D:\Lilywhite\Steam\steamapps\common\Muse Dash</GameRoot>
+    <GameRoot Condition="'$(GameRoot)' == ''">$(MUSEDASH_GAME_ROOT)</GameRoot>
     <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
+  <Target Name="ValidateGameRoot" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(GameRoot)\MuseDash.exe')" Text="Set GameRoot to the Muse Dash installation folder (-p:GameRoot=...)." />
+    <Error Condition="!Exists('$(GameRoot)\MelonLoader\Il2CppAssemblies\Assembly-CSharp.dll')" Text="MelonLoader IL2CPP assemblies are missing. Start the game with MelonLoader once to generate them." />
+  </Target>
   <ItemGroup>
     <Reference Include="$(GameRoot)\MelonLoader\Il2CppAssemblies\*.dll"><Private>false</Private></Reference>
     <Reference Include="MelonLoader"><HintPath>$(GameRoot)\MelonLoader\net6\MelonLoader.dll</HintPath><Private>false</Private></Reference>

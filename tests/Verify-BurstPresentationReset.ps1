@@ -1,7 +1,10 @@
-param([string]$GameRoot = 'D:\Lilywhite\Steam\steamapps\common\Muse Dash')
+param(
+    [string]$GameRoot = $env:MUSEDASH_GAME_ROOT,
+    [string]$ModPath = (Join-Path $PSScriptRoot '..\artifacts\mod\MuseDashPracticePrototype.dll')
+)
 $ErrorActionPreference = 'Stop'
 [void][Reflection.Assembly]::LoadFrom((Join-Path $GameRoot 'MelonLoader\net6\Mono.Cecil.dll'))
-$built = [Mono.Cecil.AssemblyDefinition]::ReadAssembly((Join-Path $PSScriptRoot '..\MuseDashPracticePrototype.dll'))
+$built = [Mono.Cecil.AssemblyDefinition]::ReadAssembly($ModPath)
 try {
     $type = $built.MainModule.Types | Where-Object {$_.Name -eq 'BurstPresentationReset'}
     $restore = $type.Methods | Where-Object {$_.Name -eq 'Restore'}
