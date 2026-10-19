@@ -1,25 +1,20 @@
 {
-  "Version": "0.3.1",
+  "Version": "0.3.2",
   "Game": "6.7.0",
   "MelonLoader": "0.7.0",
-  "DLL_SHA256": "441A5B577A7B277CF80969CC374D3DBE7B6672695131650F561224B968B86137",
+  "DLL_SHA256": "D30A52E2690D2478832AB862CE8E80D25EAF9B6787F7CC9ED488F5605B60FE83",
   "BuildSucceeded": true,
   "BuildWarnings": 0,
   "BuildErrors": 0,
-  "WritableResetFieldsVerified": 25,
-  "BackupVersion": "0.3.0",
-  "BackupSHA256": "669D5B8F8FFD07431C54C97BC25CDFE1F5FA75ABFE37305F8AFC687B27091291",
-  "BackupFilesVerified": 11,
+  "OfflineRegressionAssertions": 308,
+  "SimulatedResets": 100,
+  "PositionRestorationUnchanged": true,
+  "PersistenceGuardsVerified": 7,
+  "BackupVersion": "0.3.1",
+  "BackupSHA256": "441A5B577A7B277CF80969CC374D3DBE7B6672695131650F561224B968B86137",
+  "BackupFilesVerified": 12,
   "InGameTested": false,
   "InGameValidation": "User will verify",
-  "Changes": [
-    "Capture never-played note state after PreLoadEnemy",
-    "Restore transform parents/local poses, Animator and Spine setup state",
-    "Restore hold flags, transparency, input, tweens and particles",
-    "Restore note-owned update registrations without duplicating Init events",
-    "Fall back to scene restart if the cached note baseline is no longer intact"
-  ],
   "Installed": true,
-  "OtherModFilesUnchanged": 7,
-  "PersistenceGuardsVerified": 7
+  "OtherModFilesUnchanged": 7
 }

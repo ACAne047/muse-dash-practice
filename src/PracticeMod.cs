@@ -14,7 +14,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.1", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.2", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;
@@ -362,7 +362,13 @@ public sealed class PracticeMod : MelonMod
         audio.Pause();
         watch.Stop();
 
+        var inputRoutesBefore = CountGameplayInputRoutes();
         music.Reset();
+        // Reset -> GameTouchPlay.Init replaces GTrigger event 2 but appends a new
+        // TouchScript route. Remove old routes before any input is dispatched.
+        var staleInputRoutesRemoved = RestoreSingleGameplayInputRoute();
+        Log("input_routes_reset", new { round = _round + 1, before = inputRoutesBefore,
+            removed = staleInputRoutesRemoved, after = CountGameplayInputRoutes() });
         ResetHeldInput();
         noteState.Restore();
         var notes = stage.m_MusicTickData;
@@ -443,6 +449,34 @@ public sealed class PracticeMod : MelonMod
         touch.m_PunchHardTime = default;
         touch.m_JumpHardTime = default;
         GameGlobal.gTouch?.Reset();
+    }
+
+    private static int CountGameplayInputRoutes()
+    {
+        var routes = GameGlobal.gTouch?.m_CustomEvent;
+        if (routes is null) return 0;
+        var count = 0;
+        for (var i = 0; i < routes.Count; i++)
+            if (routes[i]?.id == InputRouteReset.GameplayEventId) count++;
+        return count;
+    }
+
+    private static int RestoreSingleGameplayInputRoute()
+    {
+        var routes = GameGlobal.gTouch?.m_CustomEvent ?? throw new InvalidOperationException("No input routes");
+        var removed = InputRouteReset.KeepNewestGameplayRoute(routes.Count,
+            index => routes[index]?.id, index => routes.RemoveAt(index));
+        if (CountGameplayInputRoutes() != 1)
+            throw new InvalidOperationException("Expected exactly one gameplay input route after reset");
+        var handlers = GTrigger.m_EventTriggers;
+        if (handlers is null || handlers.Length <= InputRouteReset.GameplayEventId)
+            throw new InvalidOperationException("No gameplay event handler table");
+        var current = handlers[(int)InputRouteReset.GameplayEventId];
+        for (var i = 0; i < routes.Count; i++)
+            if (routes[i]?.id == InputRouteReset.GameplayEventId
+                && (current is null || routes[i].Pointer != current.Pointer))
+                throw new InvalidOperationException("Gameplay input route does not match the current handler");
+        return removed;
     }
 
     private static float DecimalSeconds(Il2CppSystem.Decimal value) =>
