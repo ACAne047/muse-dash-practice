@@ -26,6 +26,7 @@ internal sealed class NoteResetSnapshot
     private readonly List<Animation> _legacyAnimations = new();
     private readonly List<SpineActionController> _actions = new();
     private readonly List<LongPressNoteVisibleController> _holdVisibility = new();
+    private readonly List<MultHitEnemyController> _multiHits = new();
     private readonly List<FieldState> _fields = new();
     private readonly HashSet<long> _componentPointers = new();
     private readonly List<Il2CppAssets.Scripts.GameCore.Interface.IUpdate> _initialUpdates = new();
@@ -77,7 +78,7 @@ internal sealed class NoteResetSnapshot
     public object Describe() => new
     {
         roots = RootCount, transforms = _transforms.Count, animators = _animators.Count,
-        skeletons = _skeletons.Count, holds = _holds, fields = _fields.Count
+        skeletons = _skeletons.Count, holds = _holds, multiHits = _multiHits.Count, fields = _fields.Count
     };
 
     public bool CanRestore(GameMusicScene? scene)
@@ -91,6 +92,23 @@ internal sealed class NoteResetSnapshot
     {
         foreach (var root in _roots) root.SetActive(false);
         foreach (var script in _scripts) if (script) script.StopAllCoroutines();
+
+        if (_multiHits.Count > 0)
+        {
+            // Completed bursts keep both per-object state and shared mode flags.
+            // Rewind the owned shake before killing it; the native shake methods
+            // create a new sequence when this reference is null.
+            if (MultHitEnemyController.m_HittingCameraSequence is { } sequence && TweenExtensions.IsActive(sequence))
+            {
+                TweenExtensions.Rewind(sequence, true);
+                TweenExtensions.Kill(sequence, false);
+            }
+            MultHitEnemyController.m_HittingCameraSequence = null;
+            MultHitEnemyController.isMulHitEnding = false;
+            MultHitEnemyController.isBanEmptyAction = false;
+            MultHitEnemyController.hitCount = 0;
+            MultHitEnemyController.isHitting = false;
+        }
 
         // A hold's star has a game-manager loop independent of activeSelf.
         foreach (var action in _actions)
@@ -152,6 +170,8 @@ internal sealed class NoteResetSnapshot
                 throw new InvalidOperationException("Note pose restore did not match its baseline");
         if (_actions.Any(action => action.m_HasDestroy || action.m_HasAlpha))
             throw new InvalidOperationException("Long-note destruction flags were not reset");
+        if (_multiHits.Any(note => note.m_IsFlyAway || note.m_HitCount != 0))
+            throw new InvalidOperationException("Multi-hit completion state was not reset");
     }
 
     private void CaptureTransform(Transform transform)
@@ -191,6 +211,15 @@ internal sealed class NoteResetSnapshot
         {
             _holds++;
             CaptureFields(hold, "m_IsActive", "m_IsHurt", "m_FingerId", "m_PMusicData");
+        }
+        if (component.TryCast<MultHitEnemyController>() is { } multiHit)
+        {
+            _multiHits.Add(multiHit);
+            // isDead reads m_IsFlyAway; isOver compares m_HitCount with the high
+            // threshold. Restoring HP alone leaves both of these getters stale.
+            CaptureFields(multiHit, "m_IsFlyAway", "m_HitCount", "m_AtkTime", "m_HitTime",
+                "m_MulHitLowThreshold", "m_MulHitMidThreshold", "m_MulHitHighThreshold",
+                "m_IsPlayBossHitAnimatorState");
         }
         if (component.TryCast<LongPressNoteVisibleController>() is { } visible) _holdVisibility.Add(visible);
     }

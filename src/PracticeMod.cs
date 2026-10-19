@@ -14,7 +14,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.2", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.3", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;
@@ -49,6 +49,8 @@ public sealed class PracticeMod : MelonMod
     private float _audioOffset;
     private float _position;
     private NoteResetSnapshot? _noteState;
+    private readonly List<Coroutine> _multiHitCallbacks = new();
+    private readonly HashSet<long> _multiHitCallbackIds = new();
     private readonly HashSet<string> _logged = new();
     private const string SupportedGame = "6.7.0";
 
@@ -82,6 +84,12 @@ public sealed class PracticeMod : MelonMod
             Patch(typeof(StageBattleComponent), "End", prefix: nameof(InterceptEnd));
             Patch(typeof(StageBattleComponent), "Dead", prefix: nameof(InterceptDeath));
             Patch(typeof(GameMusicScene), "PreLoadEnemy", prefix: nameof(BeforePreload), postfix: nameof(AfterPreload));
+            var delays = AccessTools.GetDeclaredMethods(typeof(CoroutineManager))
+                .Where(method => method.Name == "Delay" && method.GetParameters().FirstOrDefault()?.ParameterType == typeof(Il2CppSystem.Action))
+                .ToArray();
+            if (delays.Length != 3) throw new MissingMethodException("Expected three CoroutineManager.Delay overloads");
+            foreach (var delay in delays)
+                HarmonyInstance.Patch(delay, postfix: new HarmonyMethod(typeof(PracticeMod), nameof(TrackMultiHitDelay)));
             Patch(typeof(UnityEngine.EventSystems.StandaloneInputModule), "Process", prefix: nameof(BlockMenuPointer));
             _ready = true;
             Log("ready", new { game = SupportedGame, persistenceGuards = 7 });
@@ -156,7 +164,36 @@ public sealed class PracticeMod : MelonMod
         return false;
     }
 
-    private static void BeforePreload() { if (Current is { } mod) mod._noteState = null; }
+    private static void BeforePreload()
+    {
+        if (Current is not { } mod) return;
+        mod._noteState = null;
+        mod._multiHitCallbacks.Clear();
+        mod._multiHitCallbackIds.Clear();
+    }
+
+    private static void TrackMultiHitDelay(Il2CppSystem.Action __0, Coroutine? __result)
+    {
+        var mod = Current;
+        if (mod is null || !mod._ready || __result is null || __0 is null) return;
+        // These are the native delayed burst-start/end callbacks, not arbitrary
+        // scene coroutines. Old callbacks must not change the next round's flags.
+        if (__0.Target?.TryCast<Il2Cpp.MultHitEnemyController.__c>() is null) return;
+        if (mod._multiHitCallbackIds.Add(__result.Pointer.ToInt64())) mod._multiHitCallbacks.Add(__result);
+    }
+
+    private int CancelMultiHitCallbacks()
+    {
+        var count = _multiHitCallbacks.Count;
+        foreach (var pending in _multiHitCallbacks)
+        {
+            var coroutine = pending;
+            CoroutineManager.instance.StopCoroutine(ref coroutine);
+        }
+        _multiHitCallbacks.Clear();
+        _multiHitCallbackIds.Clear();
+        return count;
+    }
 
     private static void AfterPreload(GameMusicScene __instance)
     {
@@ -193,6 +230,8 @@ public sealed class PracticeMod : MelonMod
         if (!_inBattle)
         {
             _noteState = null;
+            _multiHitCallbacks.Clear();
+            _multiHitCallbackIds.Clear();
             _seekPending = false;
             _restartPending = false;
             if (sceneName is "UISystem_PC" or "Welcome")
@@ -362,6 +401,8 @@ public sealed class PracticeMod : MelonMod
         audio.Pause();
         watch.Stop();
 
+        var cancelledMultiHitCallbacks = CancelMultiHitCallbacks();
+
         var inputRoutesBefore = CountGameplayInputRoutes();
         music.Reset();
         // Reset -> GameTouchPlay.Init replaces GTrigger event 2 but appends a new
@@ -427,7 +468,7 @@ public sealed class PracticeMod : MelonMod
         _message = $"Round {_round}: {_a:F2}-{_b:F2}s | in-scene rewind | 3s lead-in";
         Log("fast_rewind", new { round = _round, before, target, after = stage.timeFromMusicStart,
             audioTime = audio.time, offset = _audioOffset, resetMs = started.Elapsed.TotalMilliseconds,
-            sceneHandle, clipId, stageId, noteObjects = noteState.RootCount, resetState = noteState.Describe(),
+            sceneHandle, clipId, stageId, noteObjects = noteState.RootCount, resetState = noteState.Describe(), cancelledMultiHitCallbacks,
             resetPerfect = TaskStageTarget.instance.m_PerfectResult, resetScore = TaskStageTarget.instance.m_Score });
         Probe(stage, audio);
     }

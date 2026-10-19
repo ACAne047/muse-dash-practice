@@ -6,7 +6,7 @@
     <LangVersion>10.0</LangVersion>
     <PlatformTarget>x64</PlatformTarget>
     <AssemblyName>MuseDashPracticePrototype</AssemblyName>
-    <Version>0.3.2</Version>
+    <Version>0.3.3</Version>
     <GameRoot Condition="'$(GameRoot)' == ''">D:\Lilywhite\Steam\steamapps\common\Muse Dash</GameRoot>
     <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
