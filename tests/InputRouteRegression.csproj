@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="RangeControls\**\*.cs" />
     <Compile Include="..\src\InputRouteReset.cs" Link="InputRouteReset.cs" />
   </ItemGroup>
 </Project>

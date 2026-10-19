@@ -28,12 +28,14 @@ internal sealed class NoteResetSnapshot
     private readonly List<LongPressNoteVisibleController> _holdVisibility = new();
     private readonly List<MultHitEnemyController> _multiHits = new();
     private readonly BurstPresentationReset? _burstPresentation;
+    private readonly HoldStarAnimationReset _holdStars;
     private readonly List<FieldState> _fields = new();
     private readonly HashSet<long> _componentPointers = new();
     private readonly List<Il2CppAssets.Scripts.GameCore.Interface.IUpdate> _initialUpdates = new();
     private readonly List<Il2CppAssets.Scripts.GameCore.Interface.IUpdate> _initialFixedUpdates = new();
     private int _holds;
     private int _cancelledHoldFades;
+    private int _holdEffectParticles;
 
     public int RootCount => _roots.Count;
 
@@ -65,6 +67,7 @@ internal sealed class NoteResetSnapshot
                 CaptureComponent(component);
             }
         }
+        _holdStars = new HoldStarAnimationReset(_componentPointers);
         if (_multiHits.Count > 0) _burstPresentation = new BurstPresentationReset();
         var database = DataHelperScene();
         CaptureUpdates(database?.m_Updates, _initialUpdates);
@@ -83,12 +86,13 @@ internal sealed class NoteResetSnapshot
         roots = RootCount, transforms = _transforms.Count, animators = _animators.Count,
         skeletons = _skeletons.Count, holds = _holds, multiHits = _multiHits.Count, fields = _fields.Count,
         holdMaterials = _materials.Count, holdShaderFloats = _materials.Sum(state => state.FloatCount),
-        cancelledHoldFades = _cancelledHoldFades, burstPresentation = _burstPresentation?.Describe()
+        cancelledHoldFades = _cancelledHoldFades, holdEffectParticles = _holdEffectParticles,
+        holdStarAnimations = _holdStars.Count, burstPresentation = _burstPresentation?.Describe()
     };
 
     public bool CanRestore(GameMusicScene? scene)
     {
-        if (scene is null || scene.Pointer.ToInt64() != _scene) return false;
+        if (scene is null || scene.Pointer.ToInt64() != _scene || !_holdStars.CanRestore) return false;
         if (_roots.Any(obj => !obj) || _transforms.Values.Any(state => !state.Transform || !state.ParentIsIntact)) return false;
         return _rootIds.SetEquals(NoteRoots(scene).Select(obj => obj.GetInstanceID()));
     }
@@ -123,12 +127,10 @@ internal sealed class NoteResetSnapshot
                 SpineActionController.s_UnityGameManger?.UnregLoop(action.m_MusicData.objId.ToString(CultureInfo.InvariantCulture));
             action.ClearTracks();
         }
-        KillTweens(LongActionController.s_StarTweeners);
-        LongActionController.PlayLongPressEffect(false, false);
-        LongActionController.PlayLongPressEffect(false, true);
-        StopParticles(LongActionController.s_GroundClipParticles);
-        StopParticles(LongActionController.s_AirClipParticles);
-        StopParticles(Il2CppAssets.Scripts.GameCore.GameObjectLogics.GameObjectManager.AttackEffectManager.instance?.m_ParticleLongPress);
+        // SetLength creates these infinite star animations once during preload.
+        // Reuse them; killing them removes the animation for all later rounds.
+        _holdStars.Rewind();
+        _holdEffectParticles = HoldEffectReset.ClearAndRearm();
         foreach (var visible in _holdVisibility)
         {
             KillTweens(visible.m_Tweeners);
@@ -139,10 +141,10 @@ internal sealed class NoteResetSnapshot
 
         // Cancel only note-owned tweens, never the game's global tween list.
         foreach (var state in _transforms.Values)
-            ShortcutExtensions.DOKill(state.Transform, false);
+            _holdStars.KillTransientTweens(state.Transform);
         foreach (var state in _renderers)
-            ShortcutExtensions.DOKill(state.Renderer, false);
-        foreach (var state in _materials) ShortcutExtensions.DOKill(state.Material, false);
+            _holdStars.KillTransientTweens(state.Renderer);
+        foreach (var state in _materials) _holdStars.KillTransientTweens(state.Material);
 
         RemoveNoteUpdates();
         foreach (var animation in _legacyAnimations) animation.Stop();
@@ -180,6 +182,7 @@ internal sealed class NoteResetSnapshot
             throw new InvalidOperationException("Long-note destruction flags were not reset");
         if (_multiHits.Any(note => note.m_IsFlyAway || note.m_HitCount != 0))
             throw new InvalidOperationException("Multi-hit completion state was not reset");
+        _holdStars.Restart();
     }
 
     private void CaptureTransform(Transform transform)
@@ -253,13 +256,6 @@ internal sealed class NoteResetSnapshot
         for (var i = tweens.Count - 1; i >= 0; i--)
             if (tweens[i] is { } tween) TweenExtensions.Kill(tween, false);
         tweens.Clear();
-    }
-
-    private static void StopParticles(Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<ParticleSystem>? particles)
-    {
-        if (particles is null) return;
-        foreach (var particle in particles)
-            if (particle) particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
     private void RemoveNoteUpdates()
