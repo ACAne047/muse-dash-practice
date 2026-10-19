@@ -8,6 +8,27 @@ void Check(bool condition, string reason)
 }
 
 var range = new PracticeRange();
+Check(range.A == 0 && range.B is null, "Initial A must be zero and B unset");
+Check(!range.IsRunning && !range.CanRepeat && range.WaitingForB, "Practice must start in marking mode");
+Check(!range.BeginChart(false), "Opening a chart must not request a seek");
+Check(!range.Apply("0", "", "3", out _) && !range.CanRepeat, "F9 without B must not start a loop");
+Check(range.MarkB(5) && range.CanRepeat, "Default A=0 should allow marking B and starting");
+Check(!range.BeginChart(false) && range.A == 0 && range.B is null && !range.IsRunning,
+    "A new chart must clear the previous range");
+Check(range.Apply("10", "20", "1.5", out _), "Valid manual range rejected");
+Check(range.BeginChart(true) && range.CanRepeat && range.A == 10 && range.B == 20 && range.LeadIn == 1.5f,
+    "Internal reload fallback must preserve an active loop");
+range.Suspend();
+Check(!range.CanRepeat, "Enabling practice alone must not start an existing range");
+Check(!range.BeginChart(true) && range.B is null, "A suspended range must not resume on chart load");
+foreach (var (a, b, lead) in new[] { ("", "30", "3"), ("20", "", "3"), ("20", "30", "") })
+{
+    Check(range.Apply("20", "30", "3", out _), "Failed to establish a running segment");
+    Check(!range.Apply(a, b, lead, out _) && !range.IsRunning && !range.CanRepeat,
+        "A missing F9 parameter must suspend the previous loop");
+    Check(range.Apply("20", "30", "3", out _) && range.CanRepeat,
+        "Completing parameters after a pause must allow restarting");
+}
 Check(range.Apply("20", "30", "3", out _), "Initial segment rejected");
 range.MarkA(25);
 Check(range.WaitingForB && !range.CanRepeat, "Old B must stop repeating after F7");

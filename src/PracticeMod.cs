@@ -14,7 +14,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.6", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.7", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;
@@ -32,6 +32,7 @@ public sealed class PracticeMod : MelonMod
     private bool _seekPending;
     private bool _restartPending;
     private bool _exitPending;
+    private bool _reloadLoopPending;
     private bool _inBattle;
     private bool _chartOpen;
     private bool _firstProbe;
@@ -39,13 +40,13 @@ public sealed class PracticeMod : MelonMod
     private float _nextCommand;
     private float _startedAt;
     private int _round;
-    private string _aText = "20";
-    private string _bText = "30";
+    private string _aText = "0";
+    private string _bText = "";
     private string _leadText = "3";
     private readonly PracticeRange _range = new();
     private float _a => _range.A;
-    private float _b => _range.B;
-    private string _message = "F6 panel | Set A/B, then Arm practice";
+    private float _b => _range.B ?? 0;
+    private string _message = "Enable practice, open a chart, then mark A/B with F7/F8.";
     private string _root = "";
     private GUIStyle? _label;
     private float _audioOffset;
@@ -82,6 +83,7 @@ public sealed class PracticeMod : MelonMod
             PatchGuard(game, "Il2CppAssets.Scripts.GameCore.Managers.StatisticsManager", "UploadScore");
             PatchGuard(game, "Il2CppAssets.Scripts.GameCore.Managers.StatisticsManager", "OnBattleEnd");
             PatchGuard(game, "Il2CppAssets.Scripts.GameCore.Managers.AchievementManager", "RecordBattleArgs");
+            InstallFeverGuards(game);
             Patch(typeof(StageBattleComponent), "GameStart", postfix: nameof(StageStarted));
             Patch(typeof(StageBattleComponent), "End", prefix: nameof(InterceptEnd));
             Patch(typeof(StageBattleComponent), "Dead", prefix: nameof(InterceptDeath));
@@ -130,11 +132,61 @@ public sealed class PracticeMod : MelonMod
         return false;
     }
 
+    private void InstallFeverGuards(Assembly game)
+    {
+        var methods = game.GetTypes().Where(type => typeof(AbstractFeverManager).IsAssignableFrom(type))
+            .SelectMany(AccessTools.GetDeclaredMethods)
+            .Where(method => method.Name == "InvokeFever" && !method.IsAbstract
+                && method.ReturnType == typeof(bool) && method.GetParameters().Length == 0).ToArray();
+        if (methods.Length != 4) throw new MissingMethodException("Expected four native Fever invocation implementations");
+        foreach (var method in methods)
+            HarmonyInstance.Patch(method, prefix: new HarmonyMethod(typeof(PracticeMod), nameof(BlockFever)));
+        Patch(typeof(FeverManager), "InvokeFever", prefix: nameof(AllowLegacyFever));
+        Log("fever_guards", new { invocationMethods = methods.Length + 1 });
+    }
+
+    private static bool BlockFever(ref bool __result)
+    {
+        if (Current?._enabled != true) return true;
+        __result = false;
+        return false;
+    }
+
+    private static bool AllowLegacyFever() => Current?._enabled != true;
+
+    private void EndCurrentFever()
+    {
+        if (!_inBattle) return;
+        var fever = GlobalManagers.feverManager;
+        var legacy = FeverManager.Instance;
+        if (fever is not null)
+        {
+            if (fever.m_InvokeFever || legacy?.m_IsActivateFever == true) fever.FeverEnd();
+            fever.m_InvokeFever = false;
+            fever.m_FeverValue = 0;
+            fever.m_InvokeTime = default;
+            fever.m_InvokeEndTime = default;
+        }
+        legacy?.ResetFever();
+    }
+
     private static void StageStarted(StageBattleComponent __instance)
     {
         var mod = Current;
         if (mod is null) return;
-        mod._seekPending = mod._enabled;
+        mod._seekPending = mod._enabled && mod._range.BeginChart(mod._reloadLoopPending);
+        mod._reloadLoopPending = false;
+        mod._restartPending = false;
+        if (mod._enabled)
+        {
+            if (!mod._seekPending)
+            {
+                mod._aText = "0";
+                mod._bText = "";
+                mod._message = "Practice ready; Fever OFF. F7/F8 mark a range; F9 starts or pauses for missing values.";
+            }
+            mod.EndCurrentFever();
+        }
         mod._startedAt = Time.realtimeSinceStartup;
         mod._firstProbe = true;
         mod._offsetCaptured = false;
@@ -144,7 +196,8 @@ public sealed class PracticeMod : MelonMod
             mod._exitPending = true;
             mod._message = "Official charts only; returning to song selection";
         }
-        mod.Log("stage_started", new { practice = mod._enabled, uid = DataHelper.selectedMusicUid, difficulty = DataHelper.selectedDifficulty });
+        mod.Log("stage_started", new { practice = mod._enabled, looping = mod._range.IsRunning,
+            seekPending = mod._seekPending, uid = DataHelper.selectedMusicUid, difficulty = DataHelper.selectedDifficulty });
     }
 
     private static bool InterceptEnd()
@@ -258,32 +311,38 @@ public sealed class PracticeMod : MelonMod
 
             // Read marking keys before queued exits/repeats. F7 on the boundary
             // must cancel the old B instead of first rewinding the previous range.
-            if (_enabled && stage.isInGame && !stage.isPause)
+            if (_enabled && (stage.isInGame || stage.isPause))
             {
                 var markTime = stage.timeFromMusicStart;
-                if (Input.GetKeyDown(KeyCode.F7)) MarkNewA(markTime);
-                else if (Input.GetKeyDown(KeyCode.F8)) MarkNewB(markTime);
+                if (!stage.isPause && Input.GetKeyDown(KeyCode.F7)) MarkNewA(markTime);
+                else if (!stage.isPause && Input.GetKeyDown(KeyCode.F8)) MarkNewB(markTime);
                 else if (Input.GetKeyDown(KeyCode.F9)) Arm();
             }
 
             if (_exitPending)
             {
-                if (!stage.isInGame) return;
+                if (!stage.isInGame && !stage.isPause) return;
                 _exitPending = false;
                 _enabled = false;
+                _range.Suspend();
+                _reloadLoopPending = false;
+                if (stage.isPause) stage.Resume(true);
                 BattleHelper.GameFinish();
                 return;
             }
             if (_restartPending)
             {
-                if (!stage.isInGame) return;
+                if (!stage.isInGame && !stage.isPause) return;
                 _restartPending = false;
+                if (!_enabled || !_range.CanRepeat) return;
+                if (stage.isPause) stage.Resume(false);
                 if (_fastLoop && !_seekPending && _noteState?.CanRestore(GameGlobal.gGameMusicScene) == true)
                 {
                     RewindInScene(stage, audio);
                     return;
                 }
                 _seekPending = _enabled;
+                _reloadLoopPending = true;
                 _startedAt = Time.realtimeSinceStartup;
                 if (_fastLoop) Log("reload_fallback", new { reason = "No intact pre-play note baseline" });
                 BattleHelper.GameRestart();
@@ -322,6 +381,9 @@ public sealed class PracticeMod : MelonMod
         catch (Exception error)
         {
             _enabled = false;
+            _range.Suspend();
+            _restartPending = false;
+            _reloadLoopPending = false;
             _seekPending = false;
             _exitPending = _chartOpen;
             _message = "Stopped after an error; see diagnostics. Scores remain blocked.";
@@ -444,7 +506,7 @@ public sealed class PracticeMod : MelonMod
         stage.isSucceed = false;
         stage.failTime = 0;
         BattleRoleAttributeComponent.instance.AddHp(BattleRoleAttributeComponent.instance.GetHpMax());
-        FeverManager.Instance.ResetFever();
+        EndCurrentFever();
         var characterReset = CharacterPresentationReset.Restore();
 
         var lastSkipped = 0;
@@ -585,18 +647,60 @@ public sealed class PracticeMod : MelonMod
 
     private void Arm()
     {
+        if (!_enabled && !EnablePractice()) return;
         if (!_ready) { _message = "Protection checks failed: practice disabled"; return; }
         if (_inBattle && DataHelper.selectedMusicUid?.StartsWith("album_") == true)
         { _message = "This prototype supports official charts only"; return; }
-        if (!_range.Apply(_aText, _bText, _leadText, out var error)) { _message = error; return; }
-        Tainted = true;
-        _enabled = true;
+        if (!_inBattle) { _message = "Practice enabled; open a chart before starting a loop."; return; }
+        if (!_range.Apply(_aText, _bText, _leadText, out var error)) { PauseForParameters(error); return; }
         _seekPending = false;
         _exitPending = false;
+        _reloadLoopPending = false;
         _round = 0;
-        _message = "Practice armed. This process will NOT save or upload scores.";
+        _message = "Loop started; Fever OFF. Scores will NOT be saved or uploaded.";
         Log("armed", new { a = _a, b = _b, leadIn = _range.LeadIn, loop = _loop });
-        if (_inBattle) _restartPending = true;
+        _restartPending = true;
+    }
+
+    private bool EnablePractice()
+    {
+        if (!_ready) { _message = "Protection checks failed: practice disabled"; return false; }
+        if (_inBattle && DataHelper.selectedMusicUid?.StartsWith("album_") == true)
+        { _message = "This prototype supports official charts only"; return false; }
+        Tainted = true;
+        _enabled = true;
+        _range.Suspend();
+        _seekPending = false;
+        _restartPending = false;
+        _exitPending = false;
+        _reloadLoopPending = false;
+        EndCurrentFever();
+        _message = "Practice enabled; Fever OFF. Keep playing and mark A/B with F7/F8, or fill values and press F9.";
+        Log("practice_enabled", new { inBattle = _inBattle, looping = false });
+        return true;
+    }
+
+    private void PauseForParameters(string error)
+    {
+        _range.Suspend();
+        _restartPending = false;
+        _seekPending = false;
+        _exitPending = false;
+        _reloadLoopPending = false;
+        _panel = true;
+        var stage = _inBattle ? StageBattleComponent.instance : null;
+        if (stage is not null && stage.isInGame && !stage.isPause) stage.Pause(true);
+        _message = "Paused: " + error + ". Fill fields and press F9, or click Resume marking.";
+        Log("parameters_paused", new { error, paused = stage?.isPause });
+    }
+
+    private void ResumeMarking()
+    {
+        var stage = _inBattle ? StageBattleComponent.instance : null;
+        if (!_enabled || _range.IsRunning || stage is null || !stage.isPause) return;
+        stage.Resume(false);
+        _message = "Marking resumed; Fever OFF. F7 sets A, F8 sets B and starts the loop.";
+        Log("marking_resumed", new { chartTime = stage.timeFromMusicStart });
     }
 
     private void MarkNewA(float time)
@@ -607,6 +711,7 @@ public sealed class PracticeMod : MelonMod
         _restartPending = false;
         _seekPending = false;
         _exitPending = false;
+        _reloadLoopPending = false;
         _message = "A set. Loop suspended; keep playing, then press F8 to set a NEW B.";
         Log("awaiting_b", new { a = _a, chartTime = time });
     }
@@ -614,7 +719,7 @@ public sealed class PracticeMod : MelonMod
     private void MarkNewB(float time)
     {
         _bText = time.ToString("F2", CultureInfo.InvariantCulture);
-        if (_range.WaitingForB) { Arm(); return; }
+        if (!_range.IsRunning) { Arm(); return; }
         if (!_range.MarkB(time)) { _message = "B must be at least A + 1 second"; return; }
         _message = $"B set to {_b:F2}s";
     }
@@ -637,10 +742,12 @@ public sealed class PracticeMod : MelonMod
             if (root.TryGetProperty("fast", out var fast)) _fastLoop = fast.GetBoolean();
             switch (action)
             {
+                case "enable": EnablePractice(); break;
                 case "arm": Arm(); break;
-                case "restart": if (_enabled && _range.CanRepeat) _restartPending = true; break;
+                case "restart": if (_enabled) Arm(); break;
                 case "exit": RequestExit(); break;
-                case "stop": _enabled = false; _message = "Practice stopped. Restart the game for normal score saving."; break;
+                case "stop": _enabled = false; _range.Suspend(); _restartPending = false; _seekPending = false;
+                    _reloadLoopPending = false; _message = "Practice stopped. Restart the game for normal score saving."; break;
                 case "show": _panel = true; break;
             }
             File.Delete(path); // Only this mod's fixed, one-shot diagnostic command file.
@@ -652,6 +759,8 @@ public sealed class PracticeMod : MelonMod
     private void RequestExit()
     {
         _enabled = false;
+        _range.Suspend();
+        _reloadLoopPending = false;
         _restartPending = false;
         _seekPending = false;
         _exitPending = _chartOpen;
@@ -667,7 +776,7 @@ public sealed class PracticeMod : MelonMod
             _label ??= new GUIStyle(GUI.skin.label) { fontSize = 17, wordWrap = true };
             var width = Math.Min(590, Screen.width - 24);
             GUI.Box(new Rect(12, 12, width, _panel ? 282 : 58), "");
-            var status = _range.WaitingForB ? "WAIT B [F8] - NO SCORES" : "PRACTICE - NO SCORES";
+            var status = _range.IsRunning ? "LOOP - NO SCORES" : "MARK A/B - NO SCORES";
             GUI.Label(new Rect(24, 20, width - 25, 30), _enabled ? $"{status} | {_position:F2}s" : Tainted ? "NO SCORES - Restart game for normal play" : "Muse Dash Practice Prototype", _label);
             if (!_panel) { GUI.Label(new Rect(24, 46, width - 25, 25), "F6 settings | F7 A | F8 B | F9 repeat"); return; }
             GUI.Label(new Rect(24, 57, 95, 24), "A (seconds)");
@@ -676,13 +785,22 @@ public sealed class PracticeMod : MelonMod
             _bText = GUI.TextField(new Rect(330, 57, 95, 26), _bText, 12);
             GUI.Label(new Rect(24, 94, 95, 24), "Lead-in (s)");
             _leadText = GUI.TextField(new Rect(120, 94, 95, 26), _leadText, 12);
-            GUI.Label(new Rect(235, 94, 320, 26), _range.WaitingForB ? "Waiting for NEW B [F8]" : $"Applied: {_range.LeadIn:F2}s | apply with F9");
+            GUI.Label(new Rect(235, 94, 320, 26), $"{(_enabled ? "Fever OFF | " : "")}Applied lead-in: {_range.LeadIn:F2}s");
             _loop = GUI.Toggle(new Rect(24, 132, 180, 26), _loop, "Repeat A-B");
             _fastLoop = GUI.Toggle(new Rect(220, 132, 300, 26), _fastLoop, "In-scene rewind (experimental)");
-            if (GUI.Button(new Rect(24, 168, 165, 32), _enabled ? "Restart at A" : "Arm practice"))
-                Arm();
+            if (GUI.Button(new Rect(24, 168, 165, 32), _enabled ? "Start / restart [F9]" : "Enable practice"))
+            {
+                if (_enabled) Arm();
+                else EnablePractice();
+            }
             if (GUI.Button(new Rect(200, 168, 165, 32), "Exit practice chart")) RequestExit();
-            if (GUI.Button(new Rect(378, 168, 175, 32), "Hide panel [F6]")) _panel = false;
+            var canResumeMarking = _enabled && !_range.IsRunning && _inBattle
+                && StageBattleComponent.instance?.isPause == true;
+            if (GUI.Button(new Rect(378, 168, 175, 32), canResumeMarking ? "Resume marking" : "Hide panel [F6]"))
+            {
+                if (canResumeMarking) ResumeMarking();
+                else _panel = false;
+            }
             GUI.Label(new Rect(24, 212, width - 40, 62), _message, _label);
         }
         catch (Exception error) { if (_logged.Add("gui_error")) Log("gui_error", new { error = error.ToString() }); }
