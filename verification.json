@@ -1,0 +1,38 @@
+{
+  "Version": "0.2.1",
+  "GameVersion": "6.7.0",
+  "MelonLoader": "0.7.0",
+  "DLL_SHA256": "C14723E5CCD6A0816C0158AC8FFA8FE0FFC1C88782E2B000D6E5DBA50A63A60E",
+  "GameAssembly_SHA256": "0506A723A59BFCFF3BBF335A9AE583DBD72B2435A776D1E6E6E383EC2379D4A3",
+  "LoopTestVersion": "0.2.0",
+  "LoopRoundsCompleted": 5,
+  "FinalSeek": {
+    "round": 1,
+    "a": 20,
+    "b": 45,
+    "target": 17,
+    "before": 0.507,
+    "after": 17,
+    "audioTime": 17.08399,
+    "offset": 0.08399773,
+    "genIndex": 90,
+    "frequency": 10000000
+  },
+  "FinalJudgement": {
+    "Perfect": 1,
+    "Great": 0,
+    "Score": 1120
+  },
+  "FinalSegmentEnd": {
+    "round": 1,
+    "chartTime": 45.003,
+    "a": 20,
+    "b": 45
+  },
+  "RuntimeErrors": 0,
+  "ObservedBlockedMethods": [
+    "DataHelper.Save",
+    "SteamSync.SaveLocal",
+    "GameAccountSystem.Synchronize"
+  ]
+}
