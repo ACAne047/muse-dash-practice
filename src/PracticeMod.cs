@@ -14,12 +14,12 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.7", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.8", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;
 
-public sealed class PracticeMod : MelonMod
+public sealed partial class PracticeMod : MelonMod
 {
     internal static PracticeMod? Current;
     internal static bool Tainted;
@@ -96,6 +96,7 @@ public sealed class PracticeMod : MelonMod
                 HarmonyInstance.Patch(delay, postfix: new HarmonyMethod(typeof(PracticeMod), nameof(TrackMultiHitDelay)));
             Patch(typeof(UnityEngine.EventSystems.StandaloneInputModule), "Process", prefix: nameof(BlockMenuPointer));
             _ready = true;
+            _presetStore = new PresetStore(Path.Combine(_root, "presets"));
             Log("ready", new { game = SupportedGame, persistenceGuards = 7 });
         }
         catch (Exception error)
@@ -174,15 +175,15 @@ public sealed class PracticeMod : MelonMod
     {
         var mod = Current;
         if (mod is null) return;
-        mod._seekPending = mod._enabled && mod._range.BeginChart(mod._reloadLoopPending);
+        var resumeLoop = mod._range.BeginChart(mod._enabled && mod._reloadLoopPending);
+        mod._seekPending = mod._enabled && resumeLoop;
         mod._reloadLoopPending = false;
         mod._restartPending = false;
+        if (!resumeLoop) { mod._aText = "0"; mod._bText = ""; }
         if (mod._enabled)
         {
             if (!mod._seekPending)
             {
-                mod._aText = "0";
-                mod._bText = "";
                 mod._message = "Practice ready; Fever OFF. F7/F8 mark a range; F9 starts or pauses for missing values.";
             }
             mod.EndCurrentFever();
@@ -190,6 +191,7 @@ public sealed class PracticeMod : MelonMod
         mod._startedAt = Time.realtimeSinceStartup;
         mod._firstProbe = true;
         mod._offsetCaptured = false;
+        mod.BeginPresetChart();
         if (mod._enabled && DataHelper.selectedMusicUid?.StartsWith("album_") == true)
         {
             mod._seekPending = false;
@@ -273,8 +275,9 @@ public sealed class PracticeMod : MelonMod
         var mod = Current;
         if (mod is null || (!mod._panel && !mod._enabled && !Tainted)) return true;
         var pos = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
-        var area = new Rect(12, 12, Math.Min(590, Screen.width - 24), mod._panel ? 282 : 58);
-        return !(area.Contains(pos) && (Input.GetMouseButton(0) || Input.GetMouseButtonDown(0) || Input.GetMouseButtonUp(0)));
+        var area = new Rect(12, 12, Math.Min(590, Screen.width - 24), mod.PanelHeight);
+        return !(area.Contains(pos) && (Input.GetMouseButton(0) || Input.GetMouseButtonDown(0)
+            || Input.GetMouseButtonUp(0) || Math.Abs(Input.mouseScrollDelta.y) > .001f));
     }
 
     public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -284,6 +287,7 @@ public sealed class PracticeMod : MelonMod
         Log("scene", new { sceneName, buildIndex });
         if (!_inBattle)
         {
+            ClearPresetChart();
             _noteState = null;
             _multiHitCallbacks.Clear();
             _multiHitCallbackIds.Clear();
@@ -308,6 +312,7 @@ public sealed class PracticeMod : MelonMod
             if (stage is null) return;
             var audio = AudioManager.instance?.bgm;
             if (audio is null || audio.clip is null) return;
+            PreparePresetChart(stage, audio.clip);
 
             // Read marking keys before queued exits/repeats. F7 on the boundary
             // must cancel the old B instead of first rewinding the previous range.
@@ -775,7 +780,7 @@ public sealed class PracticeMod : MelonMod
         {
             _label ??= new GUIStyle(GUI.skin.label) { fontSize = 17, wordWrap = true };
             var width = Math.Min(590, Screen.width - 24);
-            GUI.Box(new Rect(12, 12, width, _panel ? 282 : 58), "");
+            GUI.Box(new Rect(12, 12, width, PanelHeight), "");
             var status = _range.IsRunning ? "LOOP - NO SCORES" : "MARK A/B - NO SCORES";
             GUI.Label(new Rect(24, 20, width - 25, 30), _enabled ? $"{status} | {_position:F2}s" : Tainted ? "NO SCORES - Restart game for normal play" : "Muse Dash Practice Prototype", _label);
             if (!_panel) { GUI.Label(new Rect(24, 46, width - 25, 25), "F6 settings | F7 A | F8 B | F9 repeat"); return; }
@@ -802,6 +807,7 @@ public sealed class PracticeMod : MelonMod
                 else _panel = false;
             }
             GUI.Label(new Rect(24, 212, width - 40, 62), _message, _label);
+            DrawPresetPanel(width);
         }
         catch (Exception error) { if (_logged.Add("gui_error")) Log("gui_error", new { error = error.ToString() }); }
     }

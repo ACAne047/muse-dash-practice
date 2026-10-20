@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="RangeControls\**\*.cs" />
+    <Compile Remove="Presets\**\*.cs" />
     <Compile Include="..\src\InputRouteReset.cs" Link="InputRouteReset.cs" />
   </ItemGroup>
 </Project>

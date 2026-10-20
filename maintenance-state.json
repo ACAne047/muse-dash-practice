@@ -1,10 +1,10 @@
 {
   "recorded_on": "2026-10-20",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "source_directory": "src",
-  "release_directory": "releases/0.3.7",
-  "release_dll": "releases/0.3.7/MuseDashPracticePrototype.dll",
-  "dll_sha256": "3CE1BAD45CAF21864055412CCC25F4B661176A87D33413A0B2E10835E78809BA",
+  "release_directory": "releases/0.3.8",
+  "release_dll": "releases/0.3.8/MuseDashPracticePrototype.dll",
+  "dll_sha256": "882250FF09F3FD83E1E8A2B50762680B0C209A8910191999B941C54D6D6B74FA",
   "game_version": "6.7.0",
   "unity_version": "2019.4.41f1",
   "melonloader_version": "0.7.0",
@@ -20,14 +20,45 @@
     "official": true,
     "custom": true,
     "basis": "User confirmed current custom charts work; preserve compatibility.",
-    "implementation_note": "Three album_ prefix checks remain in the unchanged 0.3.7 runtime source; actual custom chart identifier coverage was not re-evaluated during migration."
+    "implementation_note": "Official and custom charts share loaded native chart data. User-supplied CustomAlbums analysis distinguishes album_ resource names from temporary 999-number song UIDs. Presets exclude temporary UIDs from identity; the three legacy prefix checks remain unchanged."
   },
   "history": {
     "type": "Snapshot imports, not original development commits",
-    "tags": ["v0.2.1", "v0.3.0", "v0.3.1", "v0.3.2", "v0.3.3", "v0.3.4", "v0.3.5", "v0.3.6", "v0.3.7"],
+    "tags": [
+      "v0.2.1",
+      "v0.3.0",
+      "v0.3.1",
+      "v0.3.2",
+      "v0.3.3",
+      "v0.3.4",
+      "v0.3.5",
+      "v0.3.6",
+      "v0.3.7"
+    ],
     "original_release_archive_sha256": "D062D0E65EB2CFB510ED2D137E943297140051480A610FDBEF0E71DFBE725083"
   },
-  "validation_record": "docs/仓库验证.md",
+  "validation_record": "docs/0.3.8验证.md",
   "maintenance_document": "docs/维护记录.md",
-  "agent_entry": "AGENTS.md"
+  "agent_entry": "AGENTS.md",
+  "development_branch": "feature/range-presets",
+  "previous_version": "0.3.7",
+  "previous_dll_sha256": "3CE1BAD45CAF21864055412CCC25F4B661176A87D33413A0B2E10835E78809BA",
+  "preset_directory_relative": "UserData/MuseDashPracticePrototype/presets",
+  "preset_schema_version": 1,
+  "fingerprint_version": 1,
+  "current_version_validation": {
+    "BuildSucceeded": true,
+    "BuildWarnings": 0,
+    "BuildErrors": 0,
+    "InputRouteAssertions": 308,
+    "RangeControlAssertions": 46,
+    "PresetAssertions": 88,
+    "TotalRegressionAssertions": 442,
+    "StaticAuditsPassed": 3,
+    "InstallerFixturePassed": true,
+    "PreviousResetAndControlSourceFilesUnchanged": 8,
+    "InGameTested": false,
+    "InGameValidationOwner": "user",
+    "InstalledOnMaintenanceMachine": true
+  }
 }
