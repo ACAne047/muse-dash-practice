@@ -9,6 +9,7 @@
     <Compile Remove="RangeControls\**\*.cs" />
     <Compile Remove="Presets\**\*.cs" />
     <Compile Remove="PlaybackSpeed\**\*.cs" />
+    <Compile Remove="RewindBoundary\**\*.cs" />
     <Compile Include="..\src\InputRouteReset.cs" Link="InputRouteReset.cs" />
   </ItemGroup>
 </Project>

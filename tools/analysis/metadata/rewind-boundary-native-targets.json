@@ -1,0 +1,68 @@
+[
+  {
+    "Name": "System.Void SpineActionController::OnControllerStart()",
+    "Label": "SpineActionController.OnControllerStart",
+    "Rva": "0x1E34760",
+    "Length": "0x573"
+  },
+  {
+    "Name": "System.Void BaseEnemyObjectController::<MissAndHurt>g__NormalMissAndHurt|50_0(BaseEnemyObjectController/<>c__DisplayClass50_0&)",
+    "Label": "BaseEnemyObjectController.<MissAndHurt>g__NormalMissAndHurt|50_0",
+    "Rva": "0x476470",
+    "Length": "0x334"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.HostComponent.BattleEnemyManager::CreateBattleEnemy(System.Int32)",
+    "Label": "BattleEnemyManager.CreateBattleEnemy",
+    "Rva": "0x21495A0",
+    "Length": "0x29B"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.HostComponent.BattleEnemyManager::CreateObj(System.Int32,System.Boolean)",
+    "Label": "BattleEnemyManager.CreateObj",
+    "Rva": "0x2149840",
+    "Length": "0x1EC"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.HostComponent.BattleEnemyManager::ObjInit(UnityEngine.GameObject,System.Int32,System.Boolean)",
+    "Label": "BattleEnemyManager.ObjInit",
+    "Rva": "0x214A0C0",
+    "Length": "0x16B"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.HostComponent.BattleRoleAttributeComponent::AddHp(System.Int32)",
+    "Label": "BattleRoleAttributeComponent.AddHp",
+    "Rva": "0x214AA40",
+    "Length": "0x5B2"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.HostComponent.BattleRoleAttributeComponent::MissHardEffect(System.Single)",
+    "Label": "BattleRoleAttributeComponent.MissHardEffect",
+    "Rva": "0x214CCE0",
+    "Length": "0x58C"
+  },
+  {
+    "Name": "System.Void Assets.Scripts.GameCore.HostComponent.BattleRoleAttributeComponent::Hurt(System.Int32,System.Boolean)",
+    "Label": "BattleRoleAttributeComponent.Hurt",
+    "Rva": "0x214C600",
+    "Length": "0x467"
+  },
+  {
+    "Name": "System.Void NodeInitController::Run()",
+    "Label": "NodeInitController.Run",
+    "Rva": "0x206B100",
+    "Length": "0xF6"
+  },
+  {
+    "Name": "System.Decimal GameLogic.MusicData::get_missTick()",
+    "Label": "MusicData.get_missTick",
+    "Rva": "0x1E73B80",
+    "Length": "0x174"
+  },
+  {
+    "Name": "System.Int32 GameLogic.GameMusic::GetMusicIndexByGenTick(System.Decimal)",
+    "Label": "GameMusic.GetMusicIndexByGenTick",
+    "Rva": "0x4958B0",
+    "Length": "0x24A"
+  }
+]

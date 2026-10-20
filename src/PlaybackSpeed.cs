@@ -266,5 +266,9 @@ public sealed partial class PracticeMod
         finally { GUI.enabled = originalEnabled; }
     }
 
-    public override void OnDeinitializeMelon() => RestorePlaybackSpeed();
+    public override void OnDeinitializeMelon()
+    {
+        _leadInWindow.Cancel();
+        RestorePlaybackSpeed();
+    }
 }

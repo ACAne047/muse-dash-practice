@@ -14,7 +14,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.11", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.12", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;
@@ -85,6 +85,7 @@ public sealed partial class PracticeMod : MelonMod
             PatchGuard(game, "Il2CppAssets.Scripts.GameCore.Managers.AchievementManager", "RecordBattleArgs");
             InstallFeverGuards(game);
             InstallSpeedHooks();
+            InstallLeadInProtection();
             Patch(typeof(StageBattleComponent), "GameStart", postfix: nameof(StageStarted));
             Patch(typeof(StageBattleComponent), "End", prefix: nameof(InterceptEnd));
             Patch(typeof(StageBattleComponent), "Dead", prefix: nameof(InterceptDeath));
@@ -176,6 +177,7 @@ public sealed partial class PracticeMod : MelonMod
     {
         var mod = Current;
         if (mod is null) return;
+        mod._leadInWindow.Cancel();
         mod.RestorePlaybackSpeed(false);
         var resumeLoop = mod._range.BeginChart(mod._enabled && mod._reloadLoopPending);
         mod._seekPending = mod._enabled && resumeLoop;
@@ -284,6 +286,7 @@ public sealed partial class PracticeMod : MelonMod
 
     public override void OnSceneWasLoaded(int buildIndex, string sceneName)
     {
+        _leadInWindow.Cancel();
         RestorePlaybackSpeed(false);
         _inBattle = sceneName == "GameMain";
         if (_inBattle) _chartOpen = true;
@@ -427,6 +430,7 @@ public sealed partial class PracticeMod : MelonMod
         }
         if (target > before + .05f)
         {
+            var boundary = PlanRewindBoundary(stage, target);
             watch.Stop();
             var tick = (int)Math.Floor(target * FixUpdateTimer.precision);
             MoveTimer(music.objTimer, tick);
@@ -434,25 +438,22 @@ public sealed partial class PracticeMod : MelonMod
             MoveTimer(scene.stepTimer, tick);
             if (music.sceneObjTimer?.IsRunning() == true) MoveTimer(music.sceneObjTimer, tick);
 
-            var lastSkipped = 0;
-            var notes = stage.m_MusicTickData;
-            for (var i = 0; i < notes.Count; i++)
-            {
-                var note = notes[i];
-                if (DecimalSeconds(note.showTick) < target) lastSkipped = Math.Max(lastSkipped, note.objId);
-            }
             // GetMusicIndexByGenTick uses this cursor; without advancing it, old notes respawn.
-            BattleEnemyManager.instance.m_CurrentGenIdx = lastSkipped;
-            scene.passIdx = lastSkipped;
-            scene.prePassIdx = lastSkipped;
+            BattleEnemyManager.instance.m_CurrentGenIdx = boundary.LastSkipped;
+            scene.passIdx = boundary.LastSkipped;
+            scene.prePassIdx = boundary.LastSkipped;
             music.m_LastMusicTick = target * 1000;
             watch.elapsed = (long)(target * Il2CppSystem.Diagnostics.Stopwatch.Frequency);
             RebasePlaybackClock(watch, watch.elapsed);
             audio.timeSamples = Math.Clamp((int)((target + _audioOffset) * audio.clip.frequency), 0, audio.clip.samples - 1);
+            BeginLeadIn(target);
+            var restored = RestoreBoundaryNotes(scene, boundary);
+            Log("boundary_notes", new { target, restored, skippedCursor = boundary.LastSkipped });
             watch.Start();
             if (Math.Abs(stage.timeFromMusicStart - target) > .08f)
                 throw new InvalidOperationException("Chart clock seek did not match the requested position");
         }
+        else BeginLeadIn(before);
         _round++;
         _message = $"Round {_round}: {_a:F2}-{_b:F2}s | {_range.LeadIn:F2}s lead-in | F9 repeat";
         Log("seek", new { round = _round, a = _a, b = _b, leadIn = _range.LeadIn, target, before, after = stage.timeFromMusicStart, audioTime = audio.time, offset = _audioOffset,
@@ -479,6 +480,7 @@ public sealed partial class PracticeMod : MelonMod
             _offsetCaptured = true;
         }
         var target = _range.RewindTarget;
+        var boundary = PlanRewindBoundary(stage, target);
         var sceneHandle = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
         var clipId = audio.clip.GetInstanceID();
         var stageId = stage.Pointer.ToInt64();
@@ -523,15 +525,9 @@ public sealed partial class PracticeMod : MelonMod
         EndCurrentFever();
         var characterReset = CharacterPresentationReset.Restore();
 
-        var lastSkipped = 0;
-        for (var i = 0; i < notes.Count; i++)
-        {
-            var note = notes[i];
-            if (DecimalSeconds(note.showTick) < target) lastSkipped = Math.Max(lastSkipped, note.objId);
-        }
-        BattleEnemyManager.instance.m_CurrentGenIdx = lastSkipped;
-        scene.passIdx = lastSkipped;
-        scene.prePassIdx = lastSkipped;
+        BattleEnemyManager.instance.m_CurrentGenIdx = boundary.LastSkipped;
+        scene.passIdx = boundary.LastSkipped;
+        scene.prePassIdx = boundary.LastSkipped;
         music.m_TnoIdx = -1;
         music.m_LastMusicTick = target * 1000;
         music.m_IsEnd = false;
@@ -544,6 +540,9 @@ public sealed partial class PracticeMod : MelonMod
         watch.elapsed = (long)(target * Il2CppSystem.Diagnostics.Stopwatch.Frequency);
         RebasePlaybackClock(watch, watch.elapsed);
         audio.timeSamples = Math.Clamp((int)((target + _audioOffset) * audio.clip.frequency), 0, audio.clip.samples - 1);
+        BeginLeadIn(target);
+        var restoredBoundaryNotes = RestoreBoundaryNotes(scene, boundary);
+        Log("boundary_notes", new { target, restored = restoredBoundaryNotes, skippedCursor = boundary.LastSkipped });
         audio.UnPause();
         watch.Start();
         if (Math.Abs(stage.timeFromMusicStart - target) > .08f)
@@ -666,6 +665,7 @@ public sealed partial class PracticeMod : MelonMod
 
     private void Arm()
     {
+        _leadInWindow.Cancel();
         if (!_enabled && !EnablePractice()) return;
         if (!_ready) { _message = "Protection checks failed: practice disabled"; return; }
         if (_inBattle && DataHelper.selectedMusicUid?.StartsWith("album_") == true)
@@ -683,6 +683,7 @@ public sealed partial class PracticeMod : MelonMod
 
     private bool EnablePractice()
     {
+        _leadInWindow.Cancel();
         if (!_ready) { _message = "Protection checks failed: practice disabled"; return false; }
         if (_inBattle && DataHelper.selectedMusicUid?.StartsWith("album_") == true)
         { _message = "This prototype supports official charts only"; return false; }
@@ -701,6 +702,7 @@ public sealed partial class PracticeMod : MelonMod
 
     private void PauseForParameters(string error)
     {
+        _leadInWindow.Cancel();
         _range.Suspend();
         _restartPending = false;
         _seekPending = false;
@@ -724,6 +726,7 @@ public sealed partial class PracticeMod : MelonMod
 
     private void MarkNewA(float time)
     {
+        _leadInWindow.Cancel();
         _range.MarkA(time);
         _aText = time.ToString("F2", CultureInfo.InvariantCulture);
         _bText = "";
@@ -779,6 +782,7 @@ public sealed partial class PracticeMod : MelonMod
 
     private void RequestExit()
     {
+        _leadInWindow.Cancel();
         RestorePlaybackSpeed();
         _enabled = false;
         _range.Suspend();
@@ -807,7 +811,7 @@ public sealed partial class PracticeMod : MelonMod
             _bText = GUI.TextField(new Rect(330, 57, 95, 26), _bText, 12);
             GUI.Label(new Rect(24, 94, 95, 24), "Lead-in (s)");
             _leadText = GUI.TextField(new Rect(120, 94, 95, 26), _leadText, 12);
-            GUI.Label(new Rect(235, 94, 320, 26), $"{(_enabled ? "Fever OFF | " : "")}Applied lead-in: {_range.LeadIn:F2}s");
+            GUI.Label(new Rect(235, 94, 320, 26), IsLeadInProtected() ? "Lead-in: INVULNERABLE until A" : $"{(_enabled ? "Fever OFF | " : "")}Applied lead-in: {_range.LeadIn:F2}s");
             _loop = GUI.Toggle(new Rect(24, 132, 180, 26), _loop, "Repeat A-B");
             _fastLoop = GUI.Toggle(new Rect(220, 132, 300, 26), _fastLoop, "In-scene rewind (experimental)");
             if (GUI.Button(new Rect(24, 168, 165, 32), _enabled ? "Start / restart [F9]" : "Enable practice"))
