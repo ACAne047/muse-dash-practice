@@ -1,0 +1,38 @@
+[
+  {
+    "Name": "System.Int32 FormulaBase.StageBattleComponent::get_getMusicOffset()",
+    "Label": "StageBattleComponent.get_getMusicOffset",
+    "Rva": "0x1D770F0",
+    "Length": "0x1AC"
+  },
+  {
+    "Name": "System.Void FormulaBase.StageBattleComponent::FixedOffset()",
+    "Label": "StageBattleComponent.FixedOffset",
+    "Rva": "0x1D6FE70",
+    "Length": "0x281"
+  },
+  {
+    "Name": "System.Void FormulaBase.StageBattleComponent::FixedMusicOffset(UnityEngine.AudioSource)",
+    "Label": "StageBattleComponent.FixedMusicOffset",
+    "Rva": "0x1D6FE00",
+    "Length": "0x6A"
+  },
+  {
+    "Name": "System.Single FormulaBase.StageBattleComponent::get_offset()",
+    "Label": "StageBattleComponent.get_offset",
+    "Rva": "0xAB4610",
+    "Length": "0x9"
+  },
+  {
+    "Name": "System.Void FormulaBase.StageBattleComponent::GameStart()",
+    "Label": "StageBattleComponent.GameStart",
+    "Rva": "0x1D70810",
+    "Length": "0x354"
+  },
+  {
+    "Name": "System.Void FormulaBase.StageBattleComponent/<>c__DisplayClass60_0::<FixedOffset>b__0()",
+    "Label": "<>c__DisplayClass60_0.<FixedOffset>b__0",
+    "Rva": "0x1D7A700",
+    "Length": "0xFF"
+  }
+]

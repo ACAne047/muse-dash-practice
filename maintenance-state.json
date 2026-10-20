@@ -1,10 +1,10 @@
 {
   "recorded_on": "2026-10-20",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "source_directory": "src",
-  "release_directory": "releases/0.3.10",
-  "release_dll": "releases/0.3.10/MuseDashPracticePrototype.dll",
-  "dll_sha256": "2283671FAD90EC374CBD0C7D3C822D0225F4725ADE2DC02C1D27158E81B90C00",
+  "release_directory": "releases/0.3.11",
+  "release_dll": "releases/0.3.11/MuseDashPracticePrototype.dll",
+  "dll_sha256": "5089175E1950DA69F7EAECC70E68C846E38F4EB051C650ADE5CE6B4C81597F06",
   "game_version": "6.7.0",
   "unity_version": "2019.4.41f1",
   "melonloader_version": "0.7.0",
@@ -37,12 +37,12 @@
     ],
     "original_release_archive_sha256": "D062D0E65EB2CFB510ED2D137E943297140051480A610FDBEF0E71DFBE725083"
   },
-  "validation_record": "docs/0.3.10验证.md",
+  "validation_record": "docs/0.3.11验证.md",
   "maintenance_document": "docs/维护记录.md",
   "agent_entry": "AGENTS.md",
-  "development_branch": "feature/playback-speed",
-  "previous_version": "0.3.9",
-  "previous_dll_sha256": "EC1256304F463EB28995E830EC961EA122F188C2583DEBA9D0B924DBBC517CF8",
+  "development_branch": "fix/playback-offset",
+  "previous_version": "0.3.10",
+  "previous_dll_sha256": "2283671FAD90EC374CBD0C7D3C822D0225F4725ADE2DC02C1D27158E81B90C00",
   "preset_directory_relative": "UserData/MuseDashPracticePrototype/presets",
   "preset_schema_version": 1,
   "fingerprint_version": 1,
@@ -53,17 +53,20 @@
     "InputRouteAssertions": 308,
     "RangeControlAssertions": 46,
     "PresetAssertions": 88,
-    "PlaybackClockAssertions": 1793,
-    "TotalRegressionAssertions": 2235,
+    "PlaybackClockAssertions": 2206,
+    "TotalRegressionAssertions": 2648,
     "StaticAuditsPassed": 4,
-    "NativeClockBranchesVerified": 11,
+    "NativeClockBranchesVerified": 14,
     "IndependentAnimationTimerScaled": true,
     "ExplicitSkeletonUpdatesUnchanged": true,
     "AnimationScalingBypassedWhilePaused": true,
     "InstallerFixturePassed": true,
     "InGameTested": false,
     "InGameValidationOwner": "user",
-    "InstalledOnMaintenanceMachine": true
+    "InstalledOnMaintenanceMachine": true,
+    "CalibrationScaledInNativeAudioSync": true,
+    "CalibrationResyncedOnRateChangeAndRestore": true,
+    "CalibrationPreferencesUnchanged": true
   },
   "playback_speed": {
     "minimum": 0.5,
@@ -72,6 +75,7 @@
     "preserve_pitch": false,
     "persistent": false,
     "range_time_units": "original song seconds",
-    "experimental": true
+    "experimental": true,
+    "calibration_time_units": "wall seconds; native source-song correction without changing preferences or chart delay"
   }
 }

@@ -37,6 +37,27 @@ try {
     $hooks = $practice.Methods | Where-Object Name -eq 'InstallSpeedHooks'
     $hookNames = @($hooks.Body.Instructions | Where-Object {$_.OpCode.Name -eq 'ldstr'} | ForEach-Object Operand)
     if ('get_deltaTime' -notin $hookNames -or 'Update' -in $hookNames) { throw 'Scale the wall timer getter; leave explicit skeleton Update(songDelta) calls intact.' }
+    if ('get_getMusicOffset' -notin $hookNames) { throw 'Native audio resync must use speed-adjusted calibration.' }
+    $calibration = $practice.Methods | Where-Object Name -eq 'ScaleMusicCalibration'
+    $calibrationFields = @($calibration.Body.Instructions | Where-Object {$_.OpCode.Name -eq 'ldfld'} | ForEach-Object {$_.Operand.Name})
+    foreach ($field in @('_enabled','_inBattle','_speedClockActive')) {
+        if ($field -notin $calibrationFields) { throw "Calibration hook is not scoped to active practice: $field" }
+    }
+    foreach ($call in @('get_offset','get_frequency','AdjustMusicOffsetSamples')) {
+        if ($call -notin (Calls 'ScaleMusicCalibration')) { throw "Calibration mapping is missing: $call" }
+    }
+    if ('ApplySpeedCalibration' -notin (Calls 'EnsurePlaybackSpeed')) { throw 'Changing rate does not resync audio calibration.' }
+    foreach ($name in @('ApplySpeedCalibration','RestorePlaybackSpeed')) {
+        foreach ($call in @('get_getMusicOffset','set_timeSamples')) {
+            if ($call -notin (Calls $name)) { throw "Calibration audio resync missing from $name : $call" }
+        }
+    }
+    foreach ($call in @('get_isPlaying','get_isPause')) {
+        if ($call -notin (Calls 'ApplySpeedCalibration')) { throw 'Calibration resync may run before native audio startup.' }
+    }
+    $stores = @($practice.Methods | Where-Object HasBody | ForEach-Object {$_.Body.Instructions} |
+        Where-Object {$_.OpCode.Name -in @('call','callvirt') -and $_.Operand.DeclaringType.Name -eq 'DataHelper' -and $_.Operand.Name -in @('set_offset','set_offsetTvMode')})
+    if ($stores.Count) { throw 'Saved calibration preferences must not be changed.' }
     foreach ($call in @('set_pitch','set_timeScale','set_fixedDeltaTime')) {
         if ($call -notin (Calls 'RefreshSpeedPresentation') -or $call -notin (Calls 'RestorePlaybackSpeed')) {
             throw "Missing speed setting or restoration: $call"
@@ -63,7 +84,8 @@ try {
         @(0x1d7749c,0xeb92c0), @(0x1d7739d,0xeb92c0), @(0x1d77300,0xeb92c0),
         @(0xeb936b,0xeb94d0), @(0xeb93a3,0xeb94d0), @(0xeb945f,0xeb94d0),
         @(0xeb959d,0xeb94d0), @(0xeb95d7,0xeb94d0),
-        @(0x9ef2d4,0x1d2c060), @(0x1d2be5a,0xeb94d0), @(0x1d2be72,0xeb94d0)
+        @(0x9ef2d4,0x1d2c060), @(0x1d2be5a,0xeb94d0), @(0x1d2be72,0xeb94d0),
+        @(0x1d6fff8,0x1d770f0), @(0x1d6fe0f,0x1d770f0), @(0x1d7a783,0x1d770f0)
     )
     foreach ($branch in $branches) {
         $offset = Offset $branch[0]
@@ -71,5 +93,5 @@ try {
             throw ('Native song-clock call route changed at RVA 0x{0:x}' -f $branch[0])
         }
     }
-    [pscustomobject]@{Status='PASS (compiled and native clock audit; not an in-game test)';NativeClockBranches=$branches.Count;ClockHookScopedToSongWatch=$true;IndependentAnimationTimerScaled=$true;ExplicitSkeletonUpdatesUnchanged=$true;AnimationScalingBypassedWhilePaused=$true;SeekRebases=2;LifecycleRestorePaths=4;PitchTimeScaleAndFixedDeltaRestored=$true} | ConvertTo-Json
+    [pscustomobject]@{Status='PASS (compiled and native clock audit; not an in-game test)';NativeClockBranches=$branches.Count;ClockHookScopedToSongWatch=$true;IndependentAnimationTimerScaled=$true;ExplicitSkeletonUpdatesUnchanged=$true;AnimationScalingBypassedWhilePaused=$true;CalibrationScaledInNativeAudioSync=$true;CalibrationResyncedOnRateChangeAndRestore=$true;CalibrationPreferencesUnchanged=$true;SeekRebases=2;LifecycleRestorePaths=4;PitchTimeScaleAndFixedDeltaRestored=$true} | ConvertTo-Json
 } finally { $built.Dispose() }

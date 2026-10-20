@@ -22,6 +22,7 @@ public sealed partial class PracticeMod
     private float _originalPitch = 1;
     private float _originalTimeScale = 1;
     private float _originalFixedDelta;
+    private bool _speedCalibrationPending;
 
     private void InstallSpeedHooks()
     {
@@ -30,6 +31,7 @@ public sealed partial class PracticeMod
         // shared native getter, filtered to this one song-watch instance.
         Patch(typeof(NativeStopwatch), "get_ElapsedTicks", postfix: nameof(ScaleSongStopwatchTicks));
         Patch(typeof(Il2CppMDEx.Timer.GlobalTimer), "get_deltaTime", postfix: nameof(ScaleAnimationTimerDelta));
+        Patch(typeof(StageBattleComponent), "get_getMusicOffset", postfix: nameof(ScaleMusicCalibration));
         Patch(typeof(StageBattleComponent), "Pause", postfix: nameof(RefreshSpeedAfterPause));
         Patch(typeof(StageBattleComponent), "Resume", postfix: nameof(RefreshSpeedAfterPause));
     }
@@ -55,6 +57,35 @@ public sealed partial class PracticeMod
             mod._speedClockActive = false;
             mod._speedFault = error.Message;
         }
+    }
+
+    private static void ScaleMusicCalibration(StageBattleComponent __instance, ref int __result)
+    {
+        var mod = Current;
+        if (mod is null || !mod._enabled || !mod._inBattle || !mod._speedClockActive) return;
+        if (__instance.Pointer != StageBattleComponent.instance?.Pointer) return;
+        try
+        {
+            var clip = mod._speedAudio?.clip;
+            if (clip is not null)
+                __result = mod._playbackClock.AdjustMusicOffsetSamples(__result, __instance.offset, clip.frequency);
+        }
+        catch (Exception error) { mod._speedFault = error.Message; }
+    }
+
+    private void ApplySpeedCalibration(StageBattleComponent stage, AudioSource audio)
+    {
+        if (!_speedCalibrationPending || (!audio.isPlaying && !stage.isPause)) return;
+        // Same absolute native sync path used by startup and pause/resume. Its
+        // postfix changes only calibration, retaining the chart's own delay.
+        var sample = stage.getMusicOffset;
+        if (sample < 0 || sample >= audio.clip.samples) return; // Native pre-audio/ending range.
+        audio.timeSamples = sample;
+        _audioOffset = sample / (float)audio.clip.frequency - stage.timeFromMusicStart;
+        _offsetCaptured = true;
+        _speedCalibrationPending = false;
+        Log("speed_calibration", new { rate = _playbackClock.Rate, calibration = stage.offset,
+            effectiveCalibration = stage.offset * _playbackClock.Rate, sourceAudioOffset = _audioOffset });
     }
 
     private static long RawSongTicks(NativeStopwatch watch) => checked(watch.elapsed
@@ -92,11 +123,18 @@ public sealed partial class PracticeMod
             _speedAudio = audio;
             _speedClip = audio.clip.GetInstanceID();
             _speedClockActive = true;
+            _speedCalibrationPending = true;
+            _offsetCaptured = false;
             Log("speed_attached", new { rate = _selectedPlaybackRate, watch = _speedWatchPointer, chartTime = stage.timeFromMusicStart });
         }
         else if (_playbackClock.Rate != _selectedPlaybackRate)
+        {
             _playbackClock.ChangeRate(RawSongTicks(watch), _selectedPlaybackRate);
+            _speedCalibrationPending = true;
+            _offsetCaptured = false;
+        }
         RefreshSpeedPresentation(stage);
+        ApplySpeedCalibration(stage, audio);
     }
 
     private void RefreshSpeedPresentation(StageBattleComponent stage)
@@ -143,10 +181,26 @@ public sealed partial class PracticeMod
         finally
         {
             _speedClockActive = false;
+            _speedCalibrationPending = false;
+            _offsetCaptured = false;
             _speedWatchPointer = 0;
             _speedWatch = null;
             _speedFault = null;
-            try { if (_speedAudio) _speedAudio!.pitch = _originalPitch; }
+            try
+            {
+                if (_speedAudio)
+                {
+                    _speedAudio!.pitch = _originalPitch;
+                    if (preservePosition && StageBattleComponent.instance is { } stage
+                        && (stage.isInGame || stage.isPause) && _speedAudio.clip?.GetInstanceID() == _speedClip)
+                    {
+                        // The hook is now disabled and the song watch rebased;
+                        // restore the normal calibration without editing settings.
+                        var sample = stage.getMusicOffset;
+                        if (sample >= 0 && sample < _speedAudio.clip.samples) _speedAudio.timeSamples = sample;
+                    }
+                }
+            }
             catch (Exception error) { Log("speed_audio_restore_error", new { error = error.Message }); }
             finally
             {

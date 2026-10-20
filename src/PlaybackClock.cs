@@ -36,4 +36,16 @@ internal sealed class PlaybackClock
     // explicit SkeletonAnimation.Update(songDelta) calls must stay untouched.
     public float ScaleAnimationDelta(float wallDelta) =>
         float.IsFinite(wallDelta) && wallDelta >= 0 ? wallDelta * (float)Rate : 0;
+
+    // Native music sync uses (song + chartDelay - calibration) in source seconds.
+    // Calibration measures wall-time device latency; only that term follows Rate.
+    // Add a correction to the native sample instead of scaling the whole position
+    // or changing the saved preference, chart delay, or note/judgement timestamps.
+    public int AdjustMusicOffsetSamples(int nativeSample, double calibrationSeconds, int frequency)
+    {
+        if (!double.IsFinite(calibrationSeconds)) throw new ArgumentOutOfRangeException(nameof(calibrationSeconds));
+        if (frequency <= 0) throw new ArgumentOutOfRangeException(nameof(frequency));
+        return (int)Math.Clamp(Math.Round(nativeSample + calibrationSeconds * (1 - Rate) * frequency),
+            int.MinValue, int.MaxValue);
+    }
 }

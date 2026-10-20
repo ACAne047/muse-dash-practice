@@ -95,4 +95,50 @@ foreach (var rate in new[] { .5, .7, .75, 1, 1.25 })
 }
 foreach (var delta in new[] { -1f, float.NaN, float.PositiveInfinity })
     Check(regression.ScaleAnimationDelta(delta) == 0, "Invalid animation delta reached the skeleton");
-Console.WriteLine($"PASS: {assertions} speed-clock assertions (rate changes, pause/resume, source-song seeks, 700 loop resets, invalid inputs).");
+// Calibration is hardware latency in wall seconds. Musical chart delay belongs
+// to source time; include positive/negative custom-chart delays and loop seeks so
+// scaling the whole audio/chart gap would fail this regression.
+foreach (var rate in new[] { .5, .7, .75, 1, 1.25 })
+foreach (var calibration in new[] { -.079, 0, .079 })
+foreach (var chartDelay in new[] { -.37, 0, .09 })
+foreach (var frequencyHz in new[] { 44100, 48000 })
+foreach (var songTime in new[] { 3.0, 57, 123 })
+{
+    var calibratedClock = new PlaybackClock();
+    calibratedClock.Seek(0, 0, rate);
+    var nativeSample = (int)Math.Round((songTime + chartDelay - calibration) * frequencyHz);
+    var correctedSample = calibratedClock.AdjustMusicOffsetSamples(nativeSample, calibration, frequencyHz);
+    var physicalCalibration = (songTime + chartDelay - correctedSample / (double)frequencyHz) / rate;
+    Check(Math.Abs(physicalCalibration - calibration) <= 2.0 / frequencyHz / rate,
+        "Device calibration changed with speed, seek position, chart delay or sample rate");
+    if (rate == 1 || calibration == 0)
+        Check(correctedSample == nativeSample, "Original speed or zero calibration changed native audio alignment");
+}
+var offsetRegression = new PlaybackClock();
+offsetRegression.Seek(0, 0, .5);
+const int calibrationHz = 48000;
+var atOneSecond = (int)((1 - .079) * calibrationHz);
+Check(Math.Abs((1 - atOneSecond / (double)calibrationHz) / .5 - .158) < 1.0 / calibrationHz,
+    "Did not reproduce doubled 79 ms calibration at half speed");
+var halfSpeedSample = offsetRegression.AdjustMusicOffsetSamples(atOneSecond, .079, calibrationHz);
+Check(Math.Abs(halfSpeedSample / (double)calibrationHz - (1 - .0395)) < 1.0 / calibrationHz,
+    "Half speed must use 39.5 source milliseconds for 79 wall milliseconds");
+// Changing speed while paused preserves chart position; each native sync computes
+// an absolute sample from the unchanged calibration, so no correction accumulates.
+foreach (var rate in new[] { .7, 1.25, .5, 1.0, .5 })
+{
+    offsetRegression.ChangeRate(0, rate);
+    var aligned = offsetRegression.AdjustMusicOffsetSamples(atOneSecond, .079, calibrationHz);
+    Check(Math.Abs((1 - aligned / (double)calibrationHz) / rate - .079) < 2.0 / calibrationHz / rate,
+        "Pause/resume rate switches accumulated calibration correction");
+    Check(offsetRegression.Read(0) == 0, "Calibration adjustment moved the chart clock");
+}
+Check(offsetRegression.AdjustMusicOffsetSamples(-10000, 0, calibrationHz) == -10000,
+    "Negative pre-audio sentinel was clamped into an audible range");
+Check(offsetRegression.AdjustMusicOffsetSamples(int.MaxValue, .079, calibrationHz) == int.MaxValue,
+    "Music sample correction overflowed the upper integer boundary");
+Check(offsetRegression.AdjustMusicOffsetSamples(int.MinValue, -.079, calibrationHz) == int.MinValue,
+    "Music sample correction overflowed the lower integer boundary");
+Reject(() => offsetRegression.AdjustMusicOffsetSamples(0, double.NaN, calibrationHz), "Invalid calibration was accepted");
+Reject(() => offsetRegression.AdjustMusicOffsetSamples(0, .079, 0), "Invalid audio frequency was accepted");
+Console.WriteLine($"PASS: {assertions} speed-clock assertions (clock/animation sync, physical calibration, chart delay, rate changes, pause/resume, 700 loop resets, invalid inputs).");
