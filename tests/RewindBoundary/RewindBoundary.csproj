@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\src\RewindBoundary.cs" Link="RewindBoundary.cs" />
+    <Compile Include="..\..\src\BoundaryPoseClock.cs" Link="BoundaryPoseClock.cs" />
   </ItemGroup>
 </Project>

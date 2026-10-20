@@ -83,4 +83,5 @@ foreach (var invalid in new[] { new RewindNoteWindow(-1, 1, 6, 0), new RewindNot
     Check(RewindBoundaryPlan.Build(new[] { invalid }, 5).RestoreIds.Length == 0, "Invalid native window entered the restore set");
 Reject(() => RewindBoundaryPlan.Build(notes, -1), "Negative warm-start target was accepted");
 Reject(() => RewindBoundaryPlan.Build(notes, double.NaN), "Invalid warm-start target was accepted");
-Console.WriteLine($"PASS: {checks} rewind-boundary assertions (lead-in protection, A boundary, pause/speed, 100 loops, in-flight notes, holds, durations and cursors).");
+checks += PoseClockRegression.Run();
+Console.WriteLine($"PASS: {checks} rewind-boundary assertions (lead-in/A, pause/speed, 100 loops, in-flight notes, pose age, callback restoration and cursors).");

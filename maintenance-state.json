@@ -1,10 +1,10 @@
 {
   "recorded_on": "2026-10-20",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "source_directory": "src",
-  "release_directory": "releases/0.3.12",
-  "release_dll": "releases/0.3.12/MuseDashPracticePrototype.dll",
-  "dll_sha256": "54479DEFA8C19D70EAE3D76D3F4BA811CEBF895351D0B73C746CBFCCEE33AD5F",
+  "release_directory": "releases/0.3.13",
+  "release_dll": "releases/0.3.13/MuseDashPracticePrototype.dll",
+  "dll_sha256": "356D3A7A8C4141E9843CFC87F9FB8946B686F9D2A537B685E31AB8FB0AFE1D84",
   "game_version": "6.7.0",
   "unity_version": "2019.4.41f1",
   "melonloader_version": "0.7.0",
@@ -37,12 +37,12 @@
     ],
     "original_release_archive_sha256": "D062D0E65EB2CFB510ED2D137E943297140051480A610FDBEF0E71DFBE725083"
   },
-  "validation_record": "docs/0.3.12验证.md",
+  "validation_record": "docs/0.3.13验证.md",
   "maintenance_document": "docs/维护记录.md",
   "agent_entry": "AGENTS.md",
-  "development_branch": "feature/lead-in-protection",
-  "previous_version": "0.3.11",
-  "previous_dll_sha256": "5089175E1950DA69F7EAECC70E68C846E38F4EB051C650ADE5CE6B4C81597F06",
+  "development_branch": "fix/rewind-note-pose",
+  "previous_version": "0.3.12",
+  "previous_dll_sha256": "54479DEFA8C19D70EAE3D76D3F4BA811CEBF895351D0B73C746CBFCCEE33AD5F",
   "preset_directory_relative": "UserData/MuseDashPracticePrototype/presets",
   "preset_schema_version": 1,
   "fingerprint_version": 1,
@@ -54,7 +54,7 @@
     "RangeControlAssertions": 46,
     "PresetAssertions": 88,
     "PlaybackClockAssertions": 2206,
-    "TotalRegressionAssertions": 2802,
+    "TotalRegressionAssertions": 2853,
     "StaticAuditsPassed": 5,
     "NativeClockBranchesVerified": 14,
     "IndependentAnimationTimerScaled": true,
@@ -67,12 +67,15 @@
     "CalibrationScaledInNativeAudioSync": true,
     "CalibrationResyncedOnRateChangeAndRestore": true,
     "CalibrationPreferencesUnchanged": true,
-    "RewindBoundaryAssertions": 154,
-    "NativeBoundaryBranchesVerified": 8,
+    "RewindBoundaryAssertions": 205,
+    "NativeBoundaryBranchesVerified": 11,
     "LeadInDamageHooks": 3,
     "LeadInEndsAtA": true,
     "PreloadedControllersReused": true,
-    "NativeGenerationCursorsRestored": true
+    "NativeGenerationCursorsRestored": true,
+    "PoseCatchUpAfterNativeSpawn": true,
+    "ScopedAnimationCallbackRestoration": true,
+    "JudgementAndHardCodedCoordinatesUntouched": true
   },
   "playback_speed": {
     "minimum": 0.5,
@@ -98,6 +101,11 @@
     "reuse_preloaded_objects": true,
     "controller_init_repeated": false,
     "includes_exact_show_at_target": true,
-    "restores_generation_cursors": true
+    "restores_generation_cursors": true,
+    "pose_time": "source song time minus per-controller ShowTick",
+    "immediate_pose_and_mesh_refresh": true,
+    "scoped_historical_animation_callbacks_muted": true,
+    "native_event_queue_cleanup_preserved": true,
+    "judgement_timestamps_changed": false
   }
 }

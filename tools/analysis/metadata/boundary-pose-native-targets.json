@@ -1,0 +1,50 @@
+[
+  {
+    "Name": "System.Void BaseEnemyObjectController::OnControllerStart()",
+    "Label": "BaseEnemyObjectController.OnControllerStart",
+    "Rva": "0x475430",
+    "Length": "0x4D6"
+  },
+  {
+    "Name": "System.Single BaseEnemyObjectController::GetSkeletonAnimShowDistance()",
+    "Label": "BaseEnemyObjectController.GetSkeletonAnimShowDistance.9",
+    "Rva": "0x4725F0",
+    "Length": "0xCF"
+  },
+  {
+    "Name": "System.Single SpineActionController::get_ShowTick()",
+    "Label": "SpineActionController.get_ShowTick.0",
+    "Rva": "0x1E38B30",
+    "Length": "0x73"
+  },
+  {
+    "Name": "System.Void Spine.AnimationState::Update(System.Single)",
+    "Label": "AnimationState.Update.3",
+    "Rva": "0x1405A80",
+    "Length": "0x2DC"
+  },
+  {
+    "Name": "System.Boolean Spine.AnimationState::Apply(Spine.Skeleton)",
+    "Label": "AnimationState.Apply.4",
+    "Rva": "0x14037A0",
+    "Length": "0x866"
+  },
+  {
+    "Name": "System.Void Spine.EventQueue::Drain()",
+    "Label": "EventQueue.Drain.18",
+    "Rva": "0x140C470",
+    "Length": "0x2C4"
+  },
+  {
+    "Name": "System.Void Spine.Unity.SkeletonAnimation::ForceUpdate(System.Boolean)",
+    "Label": "SkeletonAnimation.ForceUpdate.1",
+    "Rva": "0x9EEFF0",
+    "Length": "0x3D"
+  },
+  {
+    "Name": "System.Void Spine.Unity.SkeletonAnimation::Update(System.Single)",
+    "Label": "SkeletonAnimation.Update.2",
+    "Rva": "0x9EF2F0",
+    "Length": "0x156"
+  }
+]

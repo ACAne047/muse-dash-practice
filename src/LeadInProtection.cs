@@ -61,7 +61,7 @@ public sealed partial class PracticeMod
         static double Seconds(Il2CppSystem.Decimal value) => double.Parse(value.ToString(), CultureInfo.InvariantCulture);
     }
 
-    private static int RestoreBoundaryNotes(GameMusicScene scene, RewindBoundaryPlan plan)
+    private int RestoreBoundaryNotes(GameMusicScene scene, RewindBoundaryPlan plan)
     {
         var manager = BattleEnemyManager.instance;
         var cursor = manager.m_CurrentGenIdx;
@@ -77,6 +77,8 @@ public sealed partial class PracticeMod
                 // CreateBattleEnemy reuses the preloaded object and Node.Run.
                 // Do not call controller.Init: that duplicates gameplay routes.
                 manager.CreateBattleEnemy(id);
+                var pose = CatchUpBoundaryPose(scene, id, root, StageBattleComponent.instance.timeFromMusicStart);
+                Log("boundary_pose", pose);
                 restored++;
             }
         }

@@ -48,6 +48,30 @@ try {
         if ($call -notin (Calls 'RestoreBoundaryNotes')) { throw "Missing preloaded object reuse: $call" }
     }
     if ('Init' -in (Calls 'RestoreBoundaryNotes') -or 'InitWithoutRun' -in (Calls 'RestoreBoundaryNotes')) { throw 'Boundary restore reinitializes registered note controllers.' }
+    $restoreCalls = Calls 'RestoreBoundaryNotes'
+    if ('CatchUpBoundaryPose' -notin $restoreCalls -or [Array]::IndexOf($restoreCalls,'CatchUpBoundaryPose') -lt [Array]::IndexOf($restoreCalls,'CreateBattleEnemy')) {
+        throw 'Restored notes are still displayed at animation time zero.'
+    }
+    $poseCalls = Calls 'CatchUpBoundaryPose'
+    foreach ($call in @('get_ShowTick','Elapsed','Update','ForceUpdate','get_fireEvents','set_fireEvents','get_UpdateMode','set_UpdateMode')) {
+        if ($call -notin $poseCalls) { throw "Pose age/sampling scope missing: $call" }
+    }
+    foreach ($call in @('SetMusicData','set_timeSamples','set_elapsed','set_position','set_localPosition','MoveTimer')) {
+        if ($call -in $poseCalls) { throw 'Visual catch-up changes judgement time, audio or hard-coded coordinates.' }
+    }
+    if (@((Method 'CatchUpBoundaryPose').Body.ExceptionHandlers | Where-Object HandlerType -eq 'Finally').Count -lt 3) {
+        throw 'Temporary animation event/culling changes are not restored.'
+    }
+    $spineProxy=[Mono.Cecil.AssemblyDefinition]::ReadAssembly((Join-Path $GameRoot 'MelonLoader\Il2CppAssemblies\Il2Cppspine-unity.dll'))
+    try {
+        foreach ($typeName in @('Il2CppSpine.AnimationState','Il2CppSpine.TrackEntry')) {
+            $type=$spineProxy.MainModule.Types | Where-Object FullName -eq $typeName
+            foreach ($name in @('Start','Interrupt','End','Dispose','Complete','Event')) {
+                $property=$type.Properties | Where-Object Name -eq $name
+                if (-not $property.GetMethod -or -not $property.SetMethod) { throw "Spine callback proxy changed: $typeName $name" }
+            }
+        }
+    } finally { $spineProxy.Dispose() }
     $restoredCursors = @($restore.Body.Instructions | Where-Object {$_.OpCode.Name -in @('call','callvirt') -and $_.Operand.Name -in @('set_m_CurrentGenIdx','set_passIdx','set_prePassIdx')})
     if ($restoredCursors.Count -ne 3 -or -not @($restore.Body.ExceptionHandlers | Where-Object HandlerType -eq 'Finally').Count) {
         throw 'Native creation cursors must be restored in a finally block.'
@@ -68,7 +92,8 @@ try {
     $branches=@(
         @(0x4766f6,0x214c600), @(0x214c872,0x214aa40), @(0x214c90a,0x214aa40),
         @(0x214981d,0x2149840), @(0x21498b9,0x1e5f1a0), @(0x21499f8,0x214a0c0),
-        @(0x214a201,0x206b100), @(0x206b1aa,0x1e34760)
+        @(0x214a201,0x206b100), @(0x206b1aa,0x1e34760),
+        @(0x47575b,0x9ef2f0), @(0x9ef366,0x1405a80), @(0x9ef006,0x9ef2f0)
     )
     foreach ($branch in $branches) {
         $offset=Offset $branch[0]
@@ -76,5 +101,5 @@ try {
             throw ('Native damage/warm-start route changed at RVA 0x{0:x}' -f $branch[0])
         }
     }
-    [pscustomobject]@{Status='PASS (compiled and native boundary audit; not an in-game test)';DamageHooks=3;PlayerScoped=$true;UsesSongTimeAndRunningRange=$true;LifecycleCancels=8;SeekPaths=2;PreloadedControllersReused=$true;NativeCursorsRestored=$true;NativeBoundaryBranches=$branches.Count} | ConvertTo-Json
+    [pscustomobject]@{Status='PASS (compiled and native boundary audit; not an in-game test)';DamageHooks=3;PlayerScoped=$true;UsesSongTimeAndRunningRange=$true;LifecycleCancels=8;SeekPaths=2;PreloadedControllersReused=$true;NativeCursorsRestored=$true;PoseCatchUpAfterNativeSpawn=$true;SpineAndAnimatorSamplingScoped=$true;JudgementAndHardCodedCoordinatesUntouched=$true;NativeBoundaryBranches=$branches.Count} | ConvertTo-Json
 } finally { $built.Dispose() }
