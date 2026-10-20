@@ -1,6 +1,6 @@
 # 维护入口
 
-先读 `README.md`、`docs/维护记录.md` 和 `maintenance-state.json`。当前版本 0.3.9（变速原型），当前源码在 `src`。支持官谱与自制谱，用户已确认现有自制谱可用；保持该兼容性。
+先读 `README.md`、`docs/维护记录.md` 和 `maintenance-state.json`。当前版本 0.3.10（变速原型），当前源码在 `src`。支持官谱与自制谱，用户已确认现有自制谱可用；保持该兼容性。
 
 - 使用中文沟通。更改运行时代码前备份实际 DLL、源码和必要日志，保留历史备份；Git 提交不能代替已安装文件和诊断日志的备份。
 - 每次开发新功能前，先创建并切换到新的独立功能分支（如 `feature/功能名称`），再开始修改代码。
@@ -12,4 +12,4 @@
 - 新版本同时更新 `PracticeMod.cs` 的 MelonInfo、csproj Version、发布目录、说明和校验元数据。`releases` 保存发布产物，`artifacts` 保存忽略的构建／分析输出。
 - 构建、检查入口为 `scripts/Build.ps1`、`scripts/Test.ps1`。不提交游戏程序集、个人日志、存档、构建缓存和第三方反编译源码。
 - 历史 `v*` 标签是迁移时导入的原快照，保留原样。已修复问题只保留版本摘要，避免在维护说明重复故障过程。
-- 变速仅接管当前歌曲 Stopwatch，A/B/提前时间保留原歌曲坐标；退出、异常和切换场景时恢复 pitch、timeScale、fixedDeltaTime。倍率不自动写入预设。
+- 变速仅接管当前歌曲 Stopwatch；活动练习谱面另将 GlobalTimer.deltaTime 同倍率缩放一次，以同步 Spine 无参 Update。不要再给 SkeletonAnimation.Update(float) 或实例动画速度重复乘倍率。A/B/提前时间保留原歌曲坐标；退出、异常和切换场景时恢复 pitch、timeScale、fixedDeltaTime。倍率不自动写入预设。

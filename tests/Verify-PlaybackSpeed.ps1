@@ -25,6 +25,18 @@ try {
         if ($field -notin $scopeFields) { throw "Clock hook is not scoped: $field" }
     }
     if ('get_ElapsedTicks' -in (Calls 'ScaleSongStopwatchTicks')) { throw 'Clock hook recursively reads itself.' }
+    $animation = $practice.Methods | Where-Object Name -eq 'ScaleAnimationTimerDelta'
+    if (-not $animation -or -not $animation.HasBody) { throw 'Independent Spine animation timer scaling is missing.' }
+    $animationFields = @($animation.Body.Instructions | Where-Object {$_.OpCode.Name -eq 'ldfld'} | ForEach-Object {$_.Operand.Name})
+    foreach ($field in @('_enabled','_inBattle','_speedClockActive')) {
+        if ($field -notin $animationFields) { throw "Animation timer hook is not limited to active practice: $field" }
+    }
+    foreach ($call in @('get_isInGame','get_isPause','ScaleAnimationDelta')) {
+        if ($call -notin (Calls 'ScaleAnimationTimerDelta')) { throw "Animation timer pause/rate guard missing: $call" }
+    }
+    $hooks = $practice.Methods | Where-Object Name -eq 'InstallSpeedHooks'
+    $hookNames = @($hooks.Body.Instructions | Where-Object {$_.OpCode.Name -eq 'ldstr'} | ForEach-Object Operand)
+    if ('get_deltaTime' -notin $hookNames -or 'Update' -in $hookNames) { throw 'Scale the wall timer getter; leave explicit skeleton Update(songDelta) calls intact.' }
     foreach ($call in @('set_pitch','set_timeScale','set_fixedDeltaTime')) {
         if ($call -notin (Calls 'RefreshSpeedPresentation') -or $call -notin (Calls 'RestorePlaybackSpeed')) {
             throw "Missing speed setting or restoration: $call"
@@ -50,7 +62,8 @@ try {
     $branches = @(
         @(0x1d7749c,0xeb92c0), @(0x1d7739d,0xeb92c0), @(0x1d77300,0xeb92c0),
         @(0xeb936b,0xeb94d0), @(0xeb93a3,0xeb94d0), @(0xeb945f,0xeb94d0),
-        @(0xeb959d,0xeb94d0), @(0xeb95d7,0xeb94d0)
+        @(0xeb959d,0xeb94d0), @(0xeb95d7,0xeb94d0),
+        @(0x9ef2d4,0x1d2c060), @(0x1d2be5a,0xeb94d0), @(0x1d2be72,0xeb94d0)
     )
     foreach ($branch in $branches) {
         $offset = Offset $branch[0]
@@ -58,5 +71,5 @@ try {
             throw ('Native song-clock call route changed at RVA 0x{0:x}' -f $branch[0])
         }
     }
-    [pscustomobject]@{Status='PASS (compiled and native clock audit; not an in-game test)';NativeClockBranches=$branches.Count;ClockHookScopedToSongWatch=$true;SeekRebases=2;LifecycleRestorePaths=4;PitchTimeScaleAndFixedDeltaRestored=$true} | ConvertTo-Json
+    [pscustomobject]@{Status='PASS (compiled and native clock audit; not an in-game test)';NativeClockBranches=$branches.Count;ClockHookScopedToSongWatch=$true;IndependentAnimationTimerScaled=$true;ExplicitSkeletonUpdatesUnchanged=$true;AnimationScalingBypassedWhilePaused=$true;SeekRebases=2;LifecycleRestorePaths=4;PitchTimeScaleAndFixedDeltaRestored=$true} | ConvertTo-Json
 } finally { $built.Dispose() }

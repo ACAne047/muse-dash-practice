@@ -29,8 +29,18 @@ public sealed partial class PracticeMod
         // all three StageBattle time getters use ElapsedMilliseconds. Patch one
         // shared native getter, filtered to this one song-watch instance.
         Patch(typeof(NativeStopwatch), "get_ElapsedTicks", postfix: nameof(ScaleSongStopwatchTicks));
+        Patch(typeof(Il2CppMDEx.Timer.GlobalTimer), "get_deltaTime", postfix: nameof(ScaleAnimationTimerDelta));
         Patch(typeof(StageBattleComponent), "Pause", postfix: nameof(RefreshSpeedAfterPause));
         Patch(typeof(StageBattleComponent), "Resume", postfix: nameof(RefreshSpeedAfterPause));
+    }
+
+    private static void ScaleAnimationTimerDelta(ref float __result)
+    {
+        var mod = Current;
+        if (mod is null || !mod._enabled || !mod._inBattle || !mod._speedClockActive) return;
+        var stage = StageBattleComponent.instance;
+        if (stage is null || !stage.isInGame || stage.isPause) return;
+        __result = mod._playbackClock.ScaleAnimationDelta(__result);
     }
 
     private static void ScaleSongStopwatchTicks(NativeStopwatch __instance, ref long __result)

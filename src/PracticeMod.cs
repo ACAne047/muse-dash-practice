@@ -14,7 +14,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.9", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.10", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;
@@ -649,6 +649,7 @@ public sealed partial class PracticeMod : MelonMod
             decimalTime = stage.timeFromMusicStartDecimal.ToString(), stage.musicStartTime,
             audioTime = audio.time, samples = audio.timeSamples, audio.isPlaying, duration = audio.clip?.length,
             speed = _speedWatch is null ? 1 : _playbackClock.Rate, pitch = audio.pitch, unityScale = Time.timeScale,
+            unityDelta = Time.deltaTime, animationDelta = Il2CppMDEx.Timer.GlobalTimer.deltaTime,
             rawWatchTicks = GameGlobal.stopwatch is { } rawWatch ? RawSongTicks(rawWatch) : 0,
             stopwatchMs = GameGlobal.stopwatch?.ElapsedMilliseconds,
             stage.lastTnoIndex, lastTnoTime = stage.lastTnoTime.ToString(), stage.isInGame, stage.isPause,

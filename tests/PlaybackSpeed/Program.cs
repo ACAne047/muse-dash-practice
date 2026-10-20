@@ -66,4 +66,33 @@ edge.Seek(100, 100, .75);
 var resetDetected = false;
 try { edge.Read(0); } catch (InvalidOperationException) { resetDetected = true; }
 Check(resetDetected, "Unexpected native stopwatch reset was hidden");
+// The 0.3.9 regression: the song and Unity advance 7 seconds in 10 seconds at
+// 0.7x, while Spine's independent GlobalTimer previously advanced all 10 seconds.
+var regression = new PlaybackClock();
+regression.Seek(0, 0, .7);
+Check(Math.Abs(10 - regression.Read(10 * frequency) / (double)frequency) > 2.9,
+    "Did not reproduce the independent animation timer mismatch");
+foreach (var rate in new[] { .5, .7, .75, 1, 1.25 })
+{
+    var animationClock = new PlaybackClock();
+    animationClock.Seek(0, 0, rate);
+    double animationTime = 0;
+    for (var frame = 1; frame <= 1000; frame++)
+    {
+        animationTime += animationClock.ScaleAnimationDelta(.01f);
+        if (frame % 50 == 0)
+            Check(Math.Abs(animationTime - animationClock.Read(frame * frequency / 100) / (double)frequency) < .0001,
+                "Spine animation and song time diverged at a non-unit playback rate");
+    }
+    // Changing rate between loops must update both clocks together. A component's
+    // own animation/track rate stays native; do not multiply it by playback again.
+    animationClock.ChangeRate(10 * frequency, .5);
+    var before = animationTime;
+    for (var frame = 0; frame < 100; frame++) animationTime += animationClock.ScaleAnimationDelta(.01f);
+    Check(Math.Abs(animationTime - before - .5) < .0001, "Animation rate did not follow the new song rate");
+    Check(Math.Abs(animationClock.ScaleAnimationDelta(.02f) - .01f) < 1e-6, "Wall delta was scaled more than once");
+    Check(animationClock.ScaleAnimationDelta(0) == 0, "Zero animation delta advanced animation");
+}
+foreach (var delta in new[] { -1f, float.NaN, float.PositiveInfinity })
+    Check(regression.ScaleAnimationDelta(delta) == 0, "Invalid animation delta reached the skeleton");
 Console.WriteLine($"PASS: {assertions} speed-clock assertions (rate changes, pause/resume, source-song seeks, 700 loop resets, invalid inputs).");

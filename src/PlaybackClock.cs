@@ -30,4 +30,10 @@ internal sealed class PlaybackClock
     }
 
     public void ChangeRate(long rawTicks, double rate) => Seek(rawTicks, Read(rawTicks), rate);
+
+    // GlobalTimer supplies unscaled wall-time deltas to Spine.Update(). Unity's
+    // timeScale does not reach that separate stopwatch. Scale that source once;
+    // explicit SkeletonAnimation.Update(songDelta) calls must stay untouched.
+    public float ScaleAnimationDelta(float wallDelta) =>
+        float.IsFinite(wallDelta) && wallDelta >= 0 ? wallDelta * (float)Rate : 0;
 }

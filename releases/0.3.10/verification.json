@@ -1,0 +1,29 @@
+{
+  "Version": "0.3.10",
+  "DLL_SHA256": "2283671FAD90EC374CBD0C7D3C822D0225F4725ADE2DC02C1D27158E81B90C00",
+  "BaseVersion": "0.3.9",
+  "BaseDLL_SHA256": "EC1256304F463EB28995E830EC961EA122F188C2583DEBA9D0B924DBBC517CF8",
+  "Validation": {
+    "BuildSucceeded": true,
+    "BuildWarnings": 0,
+    "BuildErrors": 0,
+    "InputRouteAssertions": 308,
+    "RangeControlAssertions": 46,
+    "PresetAssertions": 88,
+    "PlaybackClockAssertions": 1793,
+    "TotalRegressionAssertions": 2235,
+    "StaticAuditsPassed": 4,
+    "NativeClockBranchesVerified": 11,
+    "IndependentAnimationTimerScaled": true,
+    "ExplicitSkeletonUpdatesUnchanged": true,
+    "AnimationScalingBypassedWhilePaused": true,
+    "InstallerFixturePassed": true,
+    "InGameTested": false,
+    "InGameValidationOwner": "user",
+    "InstalledOnMaintenanceMachine": true
+  },
+  "BackupDirectory": "D:\\codex\\workspace\\2026-10-20\\muse-dash-speed-timing-fix\\backup-0.3.9",
+  "OtherModFilesUnchanged": 7,
+  "ExistingPrivateFilesUnchanged": 5,
+  "InstallationBackupDirectory": "D:\\Lilywhite\\Steam\\steamapps\\common\\Muse Dash\\UserData\\MuseDashPracticeBackups\\20261020-114452-0388961"
+}
