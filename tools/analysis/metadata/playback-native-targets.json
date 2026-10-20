@@ -1,0 +1,74 @@
+[
+  {
+    "Name": "System.Int64 System.Diagnostics.Stopwatch::GetTimestamp()",
+    "Label": "Stopwatch.GetTimestamp",
+    "Rva": "0xEB9110",
+    "Length": "0x5"
+  },
+  {
+    "Name": "System.TimeSpan System.Diagnostics.Stopwatch::get_Elapsed()",
+    "Label": "Stopwatch.get_Elapsed",
+    "Rva": "0xEB9540",
+    "Length": "0x127"
+  },
+  {
+    "Name": "System.Int64 System.Diagnostics.Stopwatch::get_ElapsedMilliseconds()",
+    "Label": "Stopwatch.get_ElapsedMilliseconds",
+    "Rva": "0xEB92C0",
+    "Length": "0x20E"
+  },
+  {
+    "Name": "System.Int64 System.Diagnostics.Stopwatch::get_ElapsedTicks()",
+    "Label": "Stopwatch.get_ElapsedTicks",
+    "Rva": "0xEB94D0",
+    "Length": "0x6B"
+  },
+  {
+    "Name": "System.Void System.Diagnostics.Stopwatch::Reset()",
+    "Label": "Stopwatch.Reset",
+    "Rva": "0xEB9120",
+    "Length": "0xD"
+  },
+  {
+    "Name": "System.Void System.Diagnostics.Stopwatch::Start()",
+    "Label": "Stopwatch.Start",
+    "Rva": "0xEB9190",
+    "Length": "0x5B"
+  },
+  {
+    "Name": "System.Void System.Diagnostics.Stopwatch::Stop()",
+    "Label": "Stopwatch.Stop",
+    "Rva": "0xEB91F0",
+    "Length": "0x7A"
+  },
+  {
+    "Name": "System.Void System.Diagnostics.Stopwatch::Restart()",
+    "Label": "Stopwatch.Restart",
+    "Rva": "0xEB9130",
+    "Length": "0x5D"
+  },
+  {
+    "Name": "System.Decimal FormulaBase.StageBattleComponent::get_timeFromMusicStartDecimal()",
+    "Label": "Stage.get_timeFromMusicStartDecimal",
+    "Rva": "0x1D77310",
+    "Length": "0x129"
+  },
+  {
+    "Name": "System.Int64 FormulaBase.StageBattleComponent::get_realTimeTick()",
+    "Label": "Stage.get_realTimeTick",
+    "Rva": "0x1D772A0",
+    "Length": "0x6A"
+  },
+  {
+    "Name": "System.Void FormulaBase.StageBattleComponent::Pause(System.Boolean)",
+    "Label": "Stage.Pause",
+    "Rva": "0x1D74C90",
+    "Length": "0x294"
+  },
+  {
+    "Name": "System.Void FormulaBase.StageBattleComponent::Resume(System.Boolean)",
+    "Label": "Stage.Resume",
+    "Rva": "0x1D75CA0",
+    "Length": "0x2FF"
+  }
+]

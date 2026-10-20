@@ -21,7 +21,7 @@ public sealed partial class PracticeMod
     private string _presetConfirmation = "";
     private int _presetPage;
     private Vector2 _presetScroll;
-    private float PanelHeight => !_panel ? 58 : !_presetsExpanded ? 318 : Math.Max(318, Math.Min(660, Screen.height - 24));
+    private float PanelHeight => !_panel ? 58 : !_presetsExpanded ? 386 : Math.Max(386, Math.Min(728, Screen.height - 24));
 
     private void ClearPresetChart()
     {
@@ -194,9 +194,9 @@ public sealed partial class PracticeMod
 
     private void DrawPresetPanel(float width)
     {
-        _presetsExpanded = GUI.Toggle(new Rect(24, 282, width - 40, 26), _presetsExpanded, "Saved ranges (local JSON)");
+        _presetsExpanded = GUI.Toggle(new Rect(24, 350, width - 40, 26), _presetsExpanded, "Saved ranges (local JSON)");
         if (!_presetsExpanded) return;
-        _presetScroll = GUI.BeginScrollView(new Rect(24, 314, width - 36, PanelHeight - 314),
+        _presetScroll = GUI.BeginScrollView(new Rect(24, 382, width - 36, PanelHeight - 382),
             _presetScroll, new Rect(0, 0, width - 58, 510));
         var originalEnabled = GUI.enabled;
         try

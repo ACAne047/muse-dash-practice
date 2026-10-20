@@ -1,0 +1,24 @@
+{
+  "Version": "0.3.9",
+  "DLL_SHA256": "EC1256304F463EB28995E830EC961EA122F188C2583DEBA9D0B924DBBC517CF8",
+  "BaseVersion": "0.3.8",
+  "Validation": {
+    "BuildSucceeded": true,
+    "BuildWarnings": 0,
+    "BuildErrors": 0,
+    "InputRouteAssertions": 308,
+    "RangeControlAssertions": 46,
+    "PresetAssertions": 88,
+    "PlaybackClockAssertions": 1674,
+    "TotalRegressionAssertions": 2116,
+    "StaticAuditsPassed": 4,
+    "NativeClockBranchesVerified": 8,
+    "InstallerFixturePassed": true,
+    "InGameTested": false,
+    "InGameValidationOwner": "user",
+    "InstalledOnMaintenanceMachine": true
+  },
+  "OtherModFilesUnchanged": 7,
+  "ExistingPrivateFilesUnchanged": 4,
+  "BackupDirectory": "D:\\codex\\workspace\\2026-10-20\\muse-dash-speed\\backup-0.3.8"
+}

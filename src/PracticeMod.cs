@@ -14,7 +14,7 @@ using MelonLoader;
 using MelonLoader.Utils;
 using UnityEngine;
 
-[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.8", "Local prototype")]
+[assembly: MelonInfo(typeof(MuseDashPracticePrototype.PracticeMod), "Muse Dash Practice Prototype", "0.3.9", "Local prototype")]
 [assembly: MelonGame("PeroPeroGames", "MuseDash")]
 
 namespace MuseDashPracticePrototype;
@@ -84,6 +84,7 @@ public sealed partial class PracticeMod : MelonMod
             PatchGuard(game, "Il2CppAssets.Scripts.GameCore.Managers.StatisticsManager", "OnBattleEnd");
             PatchGuard(game, "Il2CppAssets.Scripts.GameCore.Managers.AchievementManager", "RecordBattleArgs");
             InstallFeverGuards(game);
+            InstallSpeedHooks();
             Patch(typeof(StageBattleComponent), "GameStart", postfix: nameof(StageStarted));
             Patch(typeof(StageBattleComponent), "End", prefix: nameof(InterceptEnd));
             Patch(typeof(StageBattleComponent), "Dead", prefix: nameof(InterceptDeath));
@@ -175,6 +176,7 @@ public sealed partial class PracticeMod : MelonMod
     {
         var mod = Current;
         if (mod is null) return;
+        mod.RestorePlaybackSpeed(false);
         var resumeLoop = mod._range.BeginChart(mod._enabled && mod._reloadLoopPending);
         mod._seekPending = mod._enabled && resumeLoop;
         mod._reloadLoopPending = false;
@@ -282,6 +284,7 @@ public sealed partial class PracticeMod : MelonMod
 
     public override void OnSceneWasLoaded(int buildIndex, string sceneName)
     {
+        RestorePlaybackSpeed(false);
         _inBattle = sceneName == "GameMain";
         if (_inBattle) _chartOpen = true;
         Log("scene", new { sceneName, buildIndex });
@@ -312,6 +315,7 @@ public sealed partial class PracticeMod : MelonMod
             if (stage is null) return;
             var audio = AudioManager.instance?.bgm;
             if (audio is null || audio.clip is null) return;
+            EnsurePlaybackSpeed(stage, audio);
             PreparePresetChart(stage, audio.clip);
 
             // Read marking keys before queued exits/repeats. F7 on the boundary
@@ -329,6 +333,7 @@ public sealed partial class PracticeMod : MelonMod
                 if (!stage.isInGame && !stage.isPause) return;
                 _exitPending = false;
                 _enabled = false;
+                RestorePlaybackSpeed();
                 _range.Suspend();
                 _reloadLoopPending = false;
                 if (stage.isPause) stage.Resume(true);
@@ -350,6 +355,7 @@ public sealed partial class PracticeMod : MelonMod
                 _reloadLoopPending = true;
                 _startedAt = Time.realtimeSinceStartup;
                 if (_fastLoop) Log("reload_fallback", new { reason = "No intact pre-play note baseline" });
+                RestorePlaybackSpeed();
                 BattleHelper.GameRestart();
                 return;
             }
@@ -385,6 +391,7 @@ public sealed partial class PracticeMod : MelonMod
         }
         catch (Exception error)
         {
+            RestorePlaybackSpeed();
             _enabled = false;
             _range.Suspend();
             _restartPending = false;
@@ -404,7 +411,7 @@ public sealed partial class PracticeMod : MelonMod
         var music = GameGlobal.gGameMusic ?? throw new InvalidOperationException("No chart controller");
         var scene = GameGlobal.gGameMusicScene ?? throw new InvalidOperationException("No scene controller");
         var watch = GameGlobal.stopwatch ?? throw new InvalidOperationException("No chart clock");
-        if (FixUpdateTimer.precision != 100 || Math.Abs(audio.pitch - 1) > .001f)
+        if (FixUpdateTimer.precision != 100 || !PlaybackRateMatches(audio))
             throw new InvalidOperationException("Unsupported timer precision or playback speed");
 
         // Jump to a lead-in before A, allowing notes and holds to spawn normally.
@@ -440,6 +447,7 @@ public sealed partial class PracticeMod : MelonMod
             scene.prePassIdx = lastSkipped;
             music.m_LastMusicTick = target * 1000;
             watch.elapsed = (long)(target * Il2CppSystem.Diagnostics.Stopwatch.Frequency);
+            RebasePlaybackClock(watch, watch.elapsed);
             audio.timeSamples = Math.Clamp((int)((target + _audioOffset) * audio.clip.frequency), 0, audio.clip.samples - 1);
             watch.Start();
             if (Math.Abs(stage.timeFromMusicStart - target) > .08f)
@@ -461,7 +469,7 @@ public sealed partial class PracticeMod : MelonMod
         var noteState = _noteState ?? throw new InvalidOperationException("No pre-play note baseline");
         if (!noteState.CanRestore(scene)) throw new InvalidOperationException("Preloaded note objects have changed");
         if (stage.isPause) stage.Resume(false);
-        if (_b > audio.clip.length - .25f || _a >= audio.clip.length - 1 || FixUpdateTimer.precision != 100 || Math.Abs(audio.pitch - 1) > .001f)
+        if (_b > audio.clip.length - .25f || _a >= audio.clip.length - 1 || FixUpdateTimer.precision != 100 || !PlaybackRateMatches(audio))
             throw new InvalidOperationException("Unsupported range, timer or playback speed");
         var before = stage.timeFromMusicStart;
         if (!_offsetCaptured)
@@ -476,6 +484,7 @@ public sealed partial class PracticeMod : MelonMod
         var stageId = stage.Pointer.ToInt64();
         audio.Pause();
         watch.Stop();
+        _speedClockActive = false;
 
         var cancelledMultiHitCallbacks = CancelMultiHitCallbacks();
 
@@ -533,6 +542,7 @@ public sealed partial class PracticeMod : MelonMod
         MoveTimer(scene.stepTimer, tick);
         if (music.sceneObjTimer?.IsRunning() == true) MoveTimer(music.sceneObjTimer, tick);
         watch.elapsed = (long)(target * Il2CppSystem.Diagnostics.Stopwatch.Frequency);
+        RebasePlaybackClock(watch, watch.elapsed);
         audio.timeSamples = Math.Clamp((int)((target + _audioOffset) * audio.clip.frequency), 0, audio.clip.samples - 1);
         audio.UnPause();
         watch.Start();
@@ -638,6 +648,8 @@ public sealed partial class PracticeMod : MelonMod
             practice = _enabled, tainted = Tainted, round = _round, rawTime = stage.timeFromMusicStart,
             decimalTime = stage.timeFromMusicStartDecimal.ToString(), stage.musicStartTime,
             audioTime = audio.time, samples = audio.timeSamples, audio.isPlaying, duration = audio.clip?.length,
+            speed = _speedWatch is null ? 1 : _playbackClock.Rate, pitch = audio.pitch, unityScale = Time.timeScale,
+            rawWatchTicks = GameGlobal.stopwatch is { } rawWatch ? RawSongTicks(rawWatch) : 0,
             stopwatchMs = GameGlobal.stopwatch?.ElapsedMilliseconds,
             stage.lastTnoIndex, lastTnoTime = stage.lastTnoTime.ToString(), stage.isInGame, stage.isPause,
             musicIndex = music?.m_TnoIdx, lastMusicTick = music?.m_LastMusicTick,
@@ -751,7 +763,9 @@ public sealed partial class PracticeMod : MelonMod
                 case "arm": Arm(); break;
                 case "restart": if (_enabled) Arm(); break;
                 case "exit": RequestExit(); break;
-                case "stop": _enabled = false; _range.Suspend(); _restartPending = false; _seekPending = false;
+                case "speed": if (root.TryGetProperty("rate", out var rate)) _speedText = rate.GetDouble().ToString(CultureInfo.InvariantCulture); ApplyPlaybackSpeed(); break;
+                case "pause_speed": PauseForSpeed(); break;
+                case "stop": RestorePlaybackSpeed(); _enabled = false; _range.Suspend(); _restartPending = false; _seekPending = false;
                     _reloadLoopPending = false; _message = "Practice stopped. Restart the game for normal score saving."; break;
                 case "show": _panel = true; break;
             }
@@ -763,6 +777,7 @@ public sealed partial class PracticeMod : MelonMod
 
     private void RequestExit()
     {
+        RestorePlaybackSpeed();
         _enabled = false;
         _range.Suspend();
         _reloadLoopPending = false;
@@ -807,6 +822,7 @@ public sealed partial class PracticeMod : MelonMod
                 else _panel = false;
             }
             GUI.Label(new Rect(24, 212, width - 40, 62), _message, _label);
+            DrawPlaybackSpeedPanel(width);
             DrawPresetPanel(width);
         }
         catch (Exception error) { if (_logged.Add("gui_error")) Log("gui_error", new { error = error.ToString() }); }
